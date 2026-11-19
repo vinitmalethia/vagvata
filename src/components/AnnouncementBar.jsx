@@ -22,7 +22,7 @@ export default function AnnouncementBar() {
         {/* Right: Phone Consultation Contact */}
         <div className="hidden lg:flex items-center space-x-2 text-[#DCE5D5]/80">
           <Phone className="w-3.5 h-3.5 text-[#C9A45C]" />
-          <span>Vaidya Support: <a href="tel:+919888335557" className="hover:text-[#C9A45C] text-[#F7F0DF] transition-colors">+91 9888335557</a></span>
+          <span>Vaidya Support: <a href="tel:+918059507909" className="hover:text-[#C9A45C] text-[#F7F0DF] transition-colors">+91 80595 07909</a></span>
         </div>
       </div>
     </div>

@@ -180,10 +180,10 @@ export default function ShopPage({ onSelectProduct, onAddToCart }) {
             </p>
           </div>
           <a
-            href="tel:+919888335557"
+            href="tel:+918059507909"
             className="px-6 py-3 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] text-[#102C20] text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
           >
-            Vaidya Support: +91 9888335557
+            Vaidya Support: +91 80595 07909
           </a>
         </div>
 

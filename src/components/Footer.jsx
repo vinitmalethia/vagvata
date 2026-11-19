@@ -71,9 +71,9 @@ export default function Footer() {
             </p>
 
             {/* Helpline Pill Box */}
-            <div className="rounded-2xl border border-[#C9A45C]/50 p-3 sm:p-3.5 bg-black/10 max-w-[270px]">
-              <div className="flex items-center space-x-3">
-                <div className="text-[#C9A45C] shrink-0">
+            <div className="rounded-2xl border border-[#C9A45C]/50 p-3 sm:p-3.5 bg-black/10 max-w-[280px]">
+              <div className="flex items-start space-x-3">
+                <div className="text-[#C9A45C] shrink-0 mt-0.5">
                   <Headphones className="w-5 h-5 text-[#C9A45C]" />
                 </div>
                 <div>
@@ -81,14 +81,28 @@ export default function Footer() {
                     AYURVEDIC VAIDYA HELPLINE
                   </span>
                   <a 
-                    href="tel:+919888335557" 
+                    href="tel:+918059507909" 
                     className="text-sm font-bold text-[#F7F0DF] hover:text-[#C9A45C] transition-colors flex items-center space-x-1.5 mt-0.5"
                   >
                     <Phone className="w-3.5 h-3.5 text-[#C9A45C]" />
-                    <span>+91 98883 35557</span>
+                    <span>+91 80595 07909</span>
+                  </a>
+                  <a 
+                    href="mailto:info@vagvatayurveda.com" 
+                    className="text-xs text-[#DFC282]/90 hover:text-white transition-colors block mt-1 underline"
+                  >
+                    info@vagvatayurveda.com
                   </a>
                 </div>
               </div>
+            </div>
+
+            {/* Registered Address */}
+            <div className="text-[11px] text-[#DCE5D5]/80 space-y-0.5 leading-relaxed pt-1">
+              <span className="text-[#DFC282] font-semibold block">Registered Address:</span>
+              <p>Ho. no. 679, Village Barsi (133)</p>
+              <p>Teh. Bawani Khera, Distt. Bhiwani</p>
+              <p>Haryana – 127032</p>
             </div>
 
             {/* Social Icons */}
@@ -214,13 +228,13 @@ export default function Footer() {
           
           {/* Left Pill: Vaidya Support */}
           <a
-            href="tel:+919888335557"
+            href="tel:+918059507909"
             className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full border border-[#C9A45C]/50 bg-black/10 text-xs text-[#DFC282] hover:text-[#F7F0DF] hover:border-[#C9A45C] transition-all"
           >
             <Headphones className="w-3.5 h-3.5 text-[#C9A45C]" />
             <span className="font-medium">Vaidya Support</span>
             <span>•</span>
-            <span className="font-semibold">+91 98883 35557</span>
+            <span className="font-semibold">+91 80595 07909</span>
           </a>
 
           {/* Center: Copyright */}

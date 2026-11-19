@@ -56,8 +56,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h4 className="font-serif text-base font-bold text-[#F7F0DF]">Ayurvedic Vaidya Helpline</h4>
-                  <a href="tel:+919888335557" className="text-sm font-bold text-[#DFC282] hover:underline block mt-0.5">
-                    +91 9888335557
+                  <a href="tel:+918059507909" className="text-sm font-bold text-[#DFC282] hover:underline block mt-0.5">
+                    +91 80595 07909
                   </a>
                   <span className="text-xs text-[#DCE5D5]/70">Available Mon - Sat, 9:00 AM - 7:00 PM IST</span>
                 </div>
@@ -70,10 +70,26 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h4 className="font-serif text-base font-bold text-[#F7F0DF]">Email Inquiries</h4>
-                  <a href="mailto:support@vagvatayurveda.com" className="text-sm text-[#DFC282] hover:underline block mt-0.5">
-                    support@vagvatayurveda.com
+                  <a href="mailto:info@vagvatayurveda.com" className="text-sm text-[#DFC282] hover:underline block mt-0.5">
+                    info@vagvatayurveda.com
                   </a>
                   <span className="text-xs text-[#DCE5D5]/70">Inquiries answered within 24 business hours</span>
+                </div>
+              </div>
+
+              {/* Registered Address */}
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 rounded-xl bg-[#173D2B] border border-[#C9A45C]/30 flex items-center justify-center text-[#C9A45C] shrink-0">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif text-base font-bold text-[#F7F0DF]">Registered Office & Apothecary</h4>
+                  <div className="text-xs text-[#DCE5D5]/80 mt-1 space-y-0.5 leading-relaxed">
+                    <p>Ho. no. 679</p>
+                    <p>Village Barsi (133)</p>
+                    <p>Teh. Bawani Khera, Distt. Bhiwani</p>
+                    <p>Haryana – 127032, India</p>
+                  </div>
                 </div>
               </div>
 

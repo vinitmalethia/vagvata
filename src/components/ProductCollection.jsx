@@ -119,11 +119,11 @@ export default function ProductCollection({ onSelectProduct, onAddToCart, search
             </div>
           </div>
           <a
-            href="tel:+919888335557"
+            href="tel:+918059507909"
             className="px-6 py-2.5 rounded bg-[#173D2B] hover:bg-[#102C20] text-[#F7F0DF] text-xs font-semibold tracking-wider uppercase transition-colors shrink-0 flex items-center space-x-2"
           >
             <PhoneCall className="w-3.5 h-3.5 text-[#C9A45C]" />
-            <span>Call: +91 9888335557</span>
+            <span>Call: +91 80595 07909</span>
           </a>
         </div>
 
