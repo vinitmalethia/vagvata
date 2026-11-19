@@ -105,7 +105,7 @@ export default function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantit
                   </div>
                   <h4 className="font-serif text-xl font-bold text-[#173D2B]">Your cart is empty</h4>
                   <p className="text-xs text-[#4A5B4D] max-w-xs mt-1">
-                    Explore our six master Ayurvedic formulations to restore balance and harmony.
+                    Explore our authentic classical Ayurvedic formulations to restore balance and harmony.
                   </p>
                   <button
                     onClick={onClose}

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, ShieldCheck, Truck, CreditCard, Lock, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, Truck, CreditCard, Lock, ArrowLeft, ArrowRight, Sparkles, ShoppingBag } from 'lucide-react';
 import ProductVisual from './ProductVisual';
 
 export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted }) {
@@ -18,10 +18,18 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
   const [orderId, setOrderId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Reset state when modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      setIsProcessing(false);
+    }
+  }, [isOpen]);
+
   const subtotal = checkoutData?.subtotal || cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
   const discountAmount = checkoutData?.discountAmount || 0;
-  const shippingCost = checkoutData?.shippingCost || 0;
-  const finalTotal = checkoutData?.finalTotal || subtotal;
+  const shippingCost = checkoutData?.shippingCost || (subtotal >= 499 ? 0 : 50);
+  const finalTotal = checkoutData?.finalTotal || (subtotal - discountAmount + shippingCost);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -30,8 +38,12 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
   const handleNextStep = (e) => {
     e.preventDefault();
     if (step === 1) {
-      if (!formData.fullName || !formData.phone || !formData.address || !formData.pincode) {
-        alert('Please fill in your delivery details.');
+      if (!formData.fullName.trim() || !formData.phone.trim() || !formData.address.trim() || !formData.pincode.trim()) {
+        alert('Please fill in your complete delivery details (Name, Phone, Address, PIN code).');
+        return;
+      }
+      if (formData.phone.trim().length < 10) {
+        alert('Please enter a valid 10-digit mobile number for order delivery updates.');
         return;
       }
       setStep(2);
@@ -85,7 +97,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
             </div>
 
             {/* Stepper Indicator */}
-            {step < 3 && (
+            {step < 3 && (cartItems.length > 0 || checkoutData) && (
               <div className="bg-[#DCE5D5]/50 px-6 py-3 border-b border-[#C9A45C]/20 flex items-center justify-between text-xs font-medium">
                 <div className={`flex items-center space-x-2 ${step >= 1 ? 'text-[#173D2B] font-bold' : 'text-gray-400'}`}>
                   <span className="w-5 h-5 rounded-full bg-[#173D2B] text-white flex items-center justify-center text-[10px]">1</span>
@@ -99,8 +111,27 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
               </div>
             )}
 
+            {/* Empty Cart Notice if opened with 0 items */}
+            {step < 3 && cartItems.length === 0 && !checkoutData && (
+              <div className="p-10 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-[#DCE5D5]/50 flex items-center justify-center text-3xl mx-auto">
+                  🌿
+                </div>
+                <h4 className="font-serif text-xl font-bold text-[#173D2B]">Your cart is currently empty</h4>
+                <p className="text-xs text-[#4A5B4D] max-w-sm mx-auto">
+                  Please add at least one authentic formulation to your Ayurvedic cart before proceeding to checkout.
+                </p>
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2.5 rounded-md bg-[#173D2B] text-[#F7F0DF] text-xs font-semibold uppercase tracking-wider hover:bg-[#102C20] transition-colors cursor-pointer"
+                >
+                  Explore Store Catalog
+                </button>
+              </div>
+            )}
+
             {/* Step 1: Address Form */}
-            {step === 1 && (
+            {step === 1 && (cartItems.length > 0 || checkoutData) && (
               <form onSubmit={handleNextStep} className="p-6 space-y-4">
                 <h4 className="font-serif text-base font-bold text-[#173D2B]">
                   1. Shipping & Vaidya Dispatch Information

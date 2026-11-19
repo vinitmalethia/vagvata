@@ -17,8 +17,9 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
   };
 
   const handleBuyNow = () => {
-    onAddToCart(product, quantity);
-    onBuyNow();
+    if (onBuyNow) {
+      onBuyNow(product, quantity);
+    }
   };
 
   return (

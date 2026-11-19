@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
@@ -7,6 +7,15 @@ export default function DoshaQuizModal({ isOpen, onClose, onSelectProduct }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
+
+  // Reset quiz when opened
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentQuestion(0);
+      setAnswers({});
+      setResult(null);
+    }
+  }, [isOpen]);
 
   const questions = [
     {

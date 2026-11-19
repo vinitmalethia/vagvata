@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight, Sparkles } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
@@ -6,6 +6,13 @@ import ProductVisual from './ProductVisual';
 
 export default function SearchModal({ isOpen, onClose, onSelectProduct }) {
   const [query, setQuery] = useState('');
+
+  // Reset query when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery('');
+    }
+  }, [isOpen]);
 
   const quickTags = [
     'Mall Yoddha',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AnnouncementBar from './components/AnnouncementBar';
 import Navbar from './components/Navbar';
@@ -20,7 +20,16 @@ import DoshaQuizModal from './components/DoshaQuizModal';
 import { Sparkles, Phone } from 'lucide-react';
 
 export default function App() {
-  const [cart, setCart] = useState([]);
+  // Persist cart items in localStorage
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vagvat_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -28,6 +37,15 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDoshaQuizOpen, setIsDoshaQuizOpen] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Sync cart to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('vagvat_cart', JSON.stringify(cart));
+    } catch (e) {
+      console.warn('Could not save cart state to localStorage', e);
+    }
+  }, [cart]);
 
   // Cart Management
   const handleAddToCart = (product, qty = 1) => {
@@ -67,13 +85,22 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = (product, qty = 1) => {
+    handleAddToCart(product, qty);
+    const subtotal = product.price * qty;
+    const shippingCost = subtotal >= 499 ? 0 : 50;
+    const finalTotal = subtotal + shippingCost;
+    setCheckoutData({ subtotal, discountAmount: 0, shippingCost, finalTotal });
     setSelectedProduct(null);
     setIsCheckoutOpen(true);
   };
 
   const handleOrderCompleted = (orderId) => {
     setCart([]);
+    setCheckoutData(null);
+    try {
+      localStorage.removeItem('vagvat_cart');
+    } catch {}
     showToast(`Order #${orderId} confirmed successfully!`);
   };
 

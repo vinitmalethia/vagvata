@@ -7,7 +7,7 @@ export default function ReviewsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', role: '', product: 'Mall Yoddha', rating: 5, comment: '' });
 
-  const allReviews = [
+  const [reviewsList, setReviewsList] = useState([
     ...REVIEWS,
     {
       id: 6,
@@ -31,14 +31,29 @@ export default function ReviewsPage() {
         'Postpartum hormonal fluctuations and erratic cycles had drained my energy. Nari Santulan brought steady regularity back to my life within two months. Gentle, natural, and truly effective.',
       date: '08 Nov 2026'
     }
-  ];
+  ]);
 
   const filtered = filterProduct === 'All'
-    ? allReviews
-    : allReviews.filter((r) => r.product.toLowerCase().includes(filterProduct.toLowerCase()));
+    ? reviewsList
+    : reviewsList.filter((r) => r.product.toLowerCase().includes(filterProduct.toLowerCase()));
 
   const handleSubmitReview = (e) => {
     e.preventDefault();
+    if (!formData.name.trim() || !formData.comment.trim()) {
+      alert('Please provide your name and your experience review.');
+      return;
+    }
+    const newRev = {
+      id: Date.now(),
+      name: formData.name.trim(),
+      role: formData.role.trim() || 'Verified Ayurvedic Customer',
+      rating: Number(formData.rating),
+      verified: true,
+      product: formData.product,
+      comment: formData.comment.trim(),
+      date: 'Just now'
+    };
+    setReviewsList((prev) => [newRev, ...prev]);
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);

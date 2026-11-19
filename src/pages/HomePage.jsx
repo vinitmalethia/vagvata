@@ -44,7 +44,7 @@ export default function HomePage({ onSelectProduct, onAddToCart, onOpenDoshaQuiz
       </div>
 
       {/* 3. Featured Products Collection */}
-      <section className="pt-8 sm:pt-10 pb-16 sm:pb-20 bg-[#F7F0DF] relative">
+      <section id="products" className="pt-8 sm:pt-10 pb-16 sm:pb-20 bg-[#F7F0DF] relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="flex flex-col md:flex-row items-center justify-between mb-8 sm:mb-10">
