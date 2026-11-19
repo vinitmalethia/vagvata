@@ -24,7 +24,7 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -39,49 +39,49 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-4xl bg-[#F7F0DF] rounded-3xl shadow-2xl overflow-hidden border border-[#C9A45C]/40 text-[#263629] z-10 my-8"
+            className="relative w-full max-w-4xl bg-[#F7F0DF] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[#C9A45C]/40 text-[#263629] z-10 my-auto max-h-[92vh] flex flex-col"
           >
             {/* Top Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-[#102C20]/80 text-[#F7F0DF] hover:bg-[#102C20] hover:text-[#C9A45C] flex items-center justify-center transition-colors shadow"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#102C20]/80 text-[#F7F0DF] hover:bg-[#102C20] hover:text-[#C9A45C] flex items-center justify-center transition-colors shadow"
               aria-label="Close dialog"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             {/* Content Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-12 max-h-[90vh] overflow-y-auto">
               
               {/* Left Column: Visual Showcase with Genuine Product Photo */}
               <div 
-                className="md:col-span-5 p-8 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-white via-[#F7F0DF] to-[#EFE5CE]"
+                className="md:col-span-5 p-4 sm:p-8 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-white via-[#F7F0DF] to-[#EFE5CE]"
               >
                 {/* Product Badge */}
                 <div 
-                  className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider shadow"
+                  className="absolute top-3 left-3 sm:top-4 sm:left-4 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider shadow"
                   style={{ backgroundColor: product.colorHex }}
                 >
                   {product.badge}
                 </div>
 
                 {/* Real Product Photo */}
-                <div className="w-full max-w-[260px] aspect-[9/16] flex items-center justify-center my-2">
+                <div className="w-full max-w-[190px] sm:max-w-[260px] aspect-[9/16] flex items-center justify-center my-1 sm:my-2">
                   <ProductVisual product={product} className="w-full h-full" />
                 </div>
 
-                <div className="mt-2 text-center space-y-1">
-                  <span className="text-xs font-bold text-[#173D2B] block">
+                <div className="mt-1 sm:mt-2 text-center space-y-0.5 sm:space-y-1">
+                  <span className="text-[11px] sm:text-xs font-bold text-[#173D2B] block">
                     Authentic Packaging: {product.capsuleCount} • {product.strength}
                   </span>
-                  <span className="text-[11px] text-[#79583B] italic block">
+                  <span className="text-[10px] sm:text-[11px] text-[#79583B] italic block">
                     {product.tagline}
                   </span>
                 </div>
               </div>
 
               {/* Right Column: Detailed Information */}
-              <div className="md:col-span-7 p-6 sm:p-8 flex flex-col justify-between bg-white">
+              <div className="md:col-span-7 p-4 sm:p-8 flex flex-col justify-between bg-white space-y-4 sm:space-y-6">
                 <div>
                   {/* Category & Dosha */}
                   <div className="flex items-center space-x-2 text-xs font-semibold text-[#79583B] tracking-wider uppercase mb-1">
@@ -222,54 +222,56 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
 
                 {/* Bottom Action Area */}
                 <div className="pt-4 border-t border-gray-100 space-y-3">
-                  <div className="flex items-center space-x-4">
-                    {/* Quantity Picker */}
-                    <div className="flex items-center space-x-2 border border-gray-300 rounded-md p-1 bg-[#F7F0DF]/40">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                    <div className="flex items-center space-x-2 flex-1">
+                      {/* Quantity Picker */}
+                      <div className="flex items-center space-x-2 border border-gray-300 rounded-lg p-1.5 sm:p-1 bg-[#F7F0DF]/40 shrink-0">
+                        <button
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="p-1 hover:text-[#C9A45C] text-[#173D2B]"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-8 text-center font-bold text-xs text-[#173D2B]">
+                          {quantity}
+                        </span>
+                        <button
+                          onClick={() => setQuantity(quantity + 1)}
+                          className="p-1 hover:text-[#C9A45C] text-[#173D2B]"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Add to Cart */}
                       <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="p-1 hover:text-[#C9A45C] text-[#173D2B]"
-                        aria-label="Decrease quantity"
+                        onClick={handleAddToCart}
+                        className={`flex-1 py-3 px-4 rounded-lg font-bold text-xs tracking-wider uppercase transition-all duration-300 flex items-center justify-center space-x-2 cursor-pointer ${
+                          added
+                            ? 'bg-[#173D2B] text-[#F7F0DF]'
+                            : 'bg-[#C9A45C] hover:bg-[#DFC282] text-[#102C20] shadow'
+                        }`}
                       >
-                        <Minus className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="w-8 text-center font-bold text-xs text-[#173D2B]">
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="p-1 hover:text-[#C9A45C] text-[#173D2B]"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
+                        {added ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-400" />
+                            <span>Added to Cart</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag className="w-4 h-4" />
+                            <span>Add to Cart • ₹{product.price * quantity}</span>
+                          </>
+                        )}
                       </button>
                     </div>
-
-                    {/* Add to Cart */}
-                    <button
-                      onClick={handleAddToCart}
-                      className={`flex-1 py-3 px-4 rounded-md font-bold text-xs tracking-wider uppercase transition-all duration-300 flex items-center justify-center space-x-2 cursor-pointer ${
-                        added
-                          ? 'bg-[#173D2B] text-[#F7F0DF]'
-                          : 'bg-[#C9A45C] hover:bg-[#DFC282] text-[#102C20] shadow'
-                      }`}
-                    >
-                      {added ? (
-                        <>
-                          <Check className="w-4 h-4 text-emerald-400" />
-                          <span>Added to Cart</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingBag className="w-4 h-4" />
-                          <span>Add to Cart • ₹{product.price * quantity}</span>
-                        </>
-                      )}
-                    </button>
 
                     {/* Buy Now Direct */}
                     <button
                       onClick={handleBuyNow}
-                      className="py-3 px-5 rounded-md bg-[#173D2B] hover:bg-[#102C20] text-[#F7F0DF] font-bold text-xs tracking-wider uppercase transition-colors shrink-0 shadow cursor-pointer"
+                      className="w-full sm:w-auto py-3 px-5 rounded-lg bg-[#173D2B] hover:bg-[#102C20] text-[#F7F0DF] font-bold text-xs tracking-wider uppercase transition-colors shrink-0 shadow cursor-pointer text-center"
                     >
                       Buy Now
                     </button>

@@ -47,19 +47,19 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-0 pb-12">
           
           {/* Column 1: Brand & Vaidya Helpline (Span 4) */}
-          <div className="lg:col-span-4 lg:pr-10 space-y-5">
+          <div className="lg:col-span-4 lg:pr-10 space-y-5 pb-6 border-b border-white/10 sm:border-none">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3.5 group">
               <img 
                 src="/images/logo.jpg" 
                 alt="Vagvat Agrovet Emblem" 
-                className="w-11 h-11 rounded-full object-cover border border-[#C9A45C]/70 shadow-md group-hover:scale-105 transition-transform duration-300"
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border border-[#C9A45C]/70 shadow-md group-hover:scale-105 transition-transform duration-300"
               />
               <div>
-                <span className="font-serif text-2xl font-bold tracking-[0.2em] text-[#F7F0DF] uppercase leading-none block">
+                <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.2em] text-[#F7F0DF] uppercase leading-none block">
                   VAGVAT
                 </span>
-                <span className="block text-[10px] tracking-[0.35em] text-[#DFC282] uppercase font-medium mt-1">
+                <span className="block text-[9px] sm:text-[10px] tracking-[0.35em] text-[#DFC282] uppercase font-medium mt-1">
                   — AGROVET —
                 </span>
               </div>
@@ -124,7 +124,7 @@ export default function Footer() {
           </div>
 
           {/* Column 2: SHOP FORMULATIONS (Span 3) */}
-          <div className="lg:col-span-3 lg:px-8 lg:border-l border-white/10 space-y-4">
+          <div className="lg:col-span-3 lg:px-8 lg:border-l border-white/10 space-y-4 pb-6 border-b border-white/10 sm:border-none">
             <div className="flex items-center space-x-2 text-[#DFC282]">
               <Leaf className="w-4 h-4 text-[#C9A45C]" />
               <h4 className="font-serif text-sm font-bold uppercase tracking-wider text-[#DFC282]">
@@ -157,7 +157,7 @@ export default function Footer() {
           </div>
 
           {/* Column 3: EXPLORE PAGES (Span 3) */}
-          <div className="lg:col-span-3 lg:px-8 lg:border-l border-white/10 space-y-4">
+          <div className="lg:col-span-3 lg:px-8 lg:border-l border-white/10 space-y-4 pb-6 border-b border-white/10 sm:border-none">
             <div className="flex items-center space-x-2 text-[#DFC282]">
               <BookOpen className="w-4 h-4 text-[#C9A45C]" />
               <h4 className="font-serif text-sm font-bold uppercase tracking-wider text-[#DFC282]">

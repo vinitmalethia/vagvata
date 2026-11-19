@@ -111,16 +111,16 @@ export default function ShopPage({ onSelectProduct, onAddToCart }) {
 
         </div>
 
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12">
+        {/* Category Filter Pills (Horizontal scrollable on mobile, centered wrap on desktop) */}
+        <div className="flex overflow-x-auto sm:flex-wrap items-center sm:justify-center gap-2 sm:gap-3 mb-8 sm:mb-12 no-scrollbar pb-2 sm:pb-0 px-1">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-full text-xs sm:text-sm font-medium tracking-wide transition-all duration-200 cursor-pointer ${
+              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium tracking-wide transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap ${
                 selectedCategory === cat
                   ? 'bg-[#173D2B] text-[#F7F0DF] shadow-md border border-[#173D2B]'
-                  : 'bg-white/80 hover:bg-white text-[#4A5B4D] hover:text-[#173D2B] border border-[#C9A45C]/30'
+                  : 'bg-white/90 hover:bg-white text-[#4A5B4D] hover:text-[#173D2B] border border-[#C9A45C]/30'
               }`}
             >
               {cat === 'All' ? `All Formulations (${PRODUCTS.length})` : cat}

@@ -42,10 +42,10 @@ export default function HeroSection({ onSelectProduct, onAddToCart }) {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#102C20]/80 border border-[#C9A45C]/40 text-[#DFC282] text-xs uppercase tracking-[0.25em] shadow-sm backdrop-blur-sm mb-5"
+              className="inline-flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-1.5 rounded-full bg-[#102C20]/80 border border-[#C9A45C]/40 text-[#DFC282] text-[10px] sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.25em] shadow-sm backdrop-blur-sm mb-4 sm:mb-5 max-w-full text-center"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#C9A45C]" />
-              <span>Rooted in Ashtanga Hridaya • 100% Classical Formulas</span>
+              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#C9A45C] shrink-0" />
+              <span className="truncate">Rooted in Ashtanga Hridaya • 100% Classical Formulas</span>
             </motion.div>
 
             {/* Main Hero Headline */}
@@ -53,7 +53,7 @@ export default function HeroSection({ onSelectProduct, onAddToCart }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.15 }}
-              className="font-serif text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-[#F7F0DF] leading-[1.12]"
+              className="font-serif text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-[#F7F0DF] leading-[1.15] sm:leading-[1.12]"
             >
               Ancient Wisdom. <br />
               <span className="italic font-normal text-[#DFC282] font-display">
@@ -66,7 +66,7 @@ export default function HeroSection({ onSelectProduct, onAddToCart }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="mt-6 text-base sm:text-lg text-[#DCE5D5]/90 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light"
+              className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-[#DCE5D5]/90 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light"
             >
               Crafted under the enduring wisdom of Acharya Vagbhata. Pure Himalayan botanicals, 
               time-honored Ayurvedic alchemy, and uncompromising modern standards for true holistic balance.
@@ -123,9 +123,9 @@ export default function HeroSection({ onSelectProduct, onAddToCart }) {
             initial={{ opacity: 0, scale: 0.92, x: 20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             transition={{ duration: 0.9, delay: 0.2 }}
-            className="lg:col-span-5 flex items-center justify-center relative py-4"
+            className="lg:col-span-5 flex items-center justify-center relative py-4 overflow-hidden lg:overflow-visible"
           >
-            <div className="relative w-full max-w-sm sm:max-w-md">
+            <div className="relative w-full max-w-[260px] sm:max-w-sm lg:max-w-md mx-auto">
               
               {/* Animation 1: Ambient Breathing Glow Halo */}
               <motion.div 
