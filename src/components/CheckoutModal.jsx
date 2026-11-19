@@ -54,6 +54,29 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         setOrderId(generatedId);
         setIsProcessing(false);
         setStep(3);
+
+        // Record order in storage for customer and admin portal
+        try {
+          const newOrder = {
+            orderId: generatedId,
+            customerName: formData.fullName,
+            customerEmail: formData.email,
+            customerPhone: formData.phone,
+            shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}`,
+            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+            total: finalTotal,
+            status: 'Processing',
+            items: cartItems.map(item => ({
+              name: item.product.name,
+              quantity: item.quantity,
+              price: item.product.price,
+              volume: item.product.volume || item.product.strength
+            }))
+          };
+          const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
+          localStorage.setItem('vagvat_orders', JSON.stringify([newOrder, ...existing]));
+        } catch {}
+
         if (onOrderCompleted) onOrderCompleted(generatedId);
       }, 1500);
     }

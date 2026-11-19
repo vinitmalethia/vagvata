@@ -11,6 +11,12 @@ import StoryPage from './pages/StoryPage';
 import WhyChooseUsPage from './pages/WhyChooseUsPage';
 import ReviewsPage from './pages/ReviewsPage';
 import ContactPage from './pages/ContactPage';
+import LoginPage from './pages/LoginPage';
+import CustomerAccountPage from './pages/CustomerAccountPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+
+import { AuthProvider } from './context/AuthContext';
+import { CustomerRoute, AdminRoute } from './components/ProtectedRoute';
 
 import CartDrawer from './components/CartDrawer';
 import ProductDetailModal from './components/ProductDetailModal';
@@ -112,72 +118,103 @@ export default function App() {
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <Router>
-      <ScrollToTop />
-      <div className="min-h-screen bg-[#F7F0DF] text-[#263629] font-sans flex flex-col relative selection:bg-[#C9A45C]/30 selection:text-[#173D2B]">
-        
-        {/* Top Announcement Bar */}
-        <AnnouncementBar />
+    <AuthProvider>
+      <Router>
+        <ScrollToTop />
+        <div className="min-h-screen bg-[#F7F0DF] text-[#263629] font-sans flex flex-col relative selection:bg-[#C9A45C]/30 selection:text-[#173D2B]">
+          
+          {/* Top Announcement Bar */}
+          <AnnouncementBar />
 
-        {/* Primary Navbar (With "Our Story" removed as requested) */}
-        <Navbar
-          cartCount={totalCartCount}
-          onOpenCart={() => setIsCartOpen(true)}
-          onOpenSearch={() => setIsSearchOpen(true)}
-        />
+          {/* Primary Navbar (With "Our Story" removed as requested) */}
+          <Navbar
+            cartCount={totalCartCount}
+            onOpenCart={() => setIsCartOpen(true)}
+            onOpenSearch={() => setIsSearchOpen(true)}
+          />
 
-        {/* Multi-Page Routes */}
-        <main className="flex-1">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <HomePage
-                  onSelectProduct={(p) => setSelectedProduct(p)}
-                  onAddToCart={handleAddToCart}
-                  onOpenDoshaQuiz={() => setIsDoshaQuizOpen(true)}
-                />
-              }
-            />
+          {/* Multi-Page Routes */}
+          <main className="flex-1">
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <HomePage
+                    onSelectProduct={(p) => setSelectedProduct(p)}
+                    onAddToCart={handleAddToCart}
+                    onOpenDoshaQuiz={() => setIsDoshaQuizOpen(true)}
+                  />
+                }
+              />
 
-            <Route
-              path="/shop"
-              element={
-                <ShopPage
-                  onSelectProduct={(p) => setSelectedProduct(p)}
-                  onAddToCart={handleAddToCart}
-                />
-              }
-            />
+              <Route
+                path="/shop"
+                element={
+                  <ShopPage
+                    onSelectProduct={(p) => setSelectedProduct(p)}
+                    onAddToCart={handleAddToCart}
+                  />
+                }
+              />
 
-            {/* Dedicated Brand Story Page */}
-            <Route
-              path="/story"
-              element={<StoryPage />}
-            />
+              {/* Dedicated Brand Story Page */}
+              <Route
+                path="/story"
+                element={<StoryPage />}
+              />
 
-            {/* Dedicated Why Choose Us Page */}
-            <Route
-              path="/why-us"
-              element={<WhyChooseUsPage />}
-            />
+              {/* Dedicated Why Choose Us Page */}
+              <Route
+                path="/why-us"
+                element={<WhyChooseUsPage />}
+              />
 
-            {/* Dedicated Reviews Page */}
-            <Route
-              path="/reviews"
-              element={<ReviewsPage />}
-            />
+              {/* Dedicated Reviews Page */}
+              <Route
+                path="/reviews"
+                element={<ReviewsPage />}
+              />
 
-            {/* Dedicated Contact & Vaidya Consultation Page */}
-            <Route
-              path="/contact"
-              element={<ContactPage />}
-            />
+              {/* Dedicated Contact & Vaidya Consultation Page */}
+              <Route
+                path="/contact"
+                element={<ContactPage />}
+              />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
+              {/* Dedicated Compact Login & Admin Portal Page */}
+              <Route
+                path="/login"
+                element={<LoginPage />}
+              />
+
+              {/* Protected Customer Account Dashboard */}
+              <Route
+                path="/account"
+                element={
+                  <CustomerRoute>
+                    <CustomerAccountPage />
+                  </CustomerRoute>
+                }
+              />
+
+              {/* Protected Admin Portal Dashboard */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboardPage />
+                  </AdminRoute>
+                }
+              />
+
+              {/* Friendly Aliases */}
+              <Route path="/dashboard" element={<Navigate to="/account" replace />} />
+              <Route path="/portal" element={<Navigate to="/login" replace />} />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
 
         {/* Global Footer with All Links */}
         <Footer />
@@ -245,5 +282,6 @@ export default function App() {
 
       </div>
     </Router>
-  );
+  </AuthProvider>
+);
 }
