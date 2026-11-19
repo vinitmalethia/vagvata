@@ -1,5 +1,5 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -15,22 +15,36 @@ export const firebaseConfig = {
   measurementId: "G-7XHVWWGZ8C"
 };
 
-// Initialize Firebase
-export const app = initializeApp(firebaseConfig);
+// Safe singleton Firebase App initialization
+export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Auth & Firestore
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+// Safe service instances
+let authInstance = null;
+let googleProviderInstance = null;
+let dbInstance = null;
 
-// Initialize Analytics if supported in the current environment
+try {
+  authInstance = getAuth(app);
+  googleProviderInstance = new GoogleAuthProvider();
+  dbInstance = getFirestore(app);
+} catch (e) {
+  console.warn("Firebase service initialization notice:", e);
+}
+
+export const auth = authInstance;
+export const googleProvider = googleProviderInstance;
+export const db = dbInstance;
+
+// Analytics (safely conditioned for browser environments)
 export let analytics = null;
 if (typeof window !== "undefined") {
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
+  isSupported()
+    .then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      }
+    })
+    .catch(() => {});
 }
 
 export default app;
