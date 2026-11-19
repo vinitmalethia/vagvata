@@ -235,7 +235,7 @@ export default function App() {
         {/* Floating Helpline Dialer */}
         <a
           href="tel:+919888335557"
-          className="fixed bottom-6 right-6 z-40 bg-[#173D2B] text-[#DFC282] hover:text-white border border-[#C9A45C]/50 shadow-2xl px-4 py-2.5 rounded-full flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider backdrop-blur-md hover:bg-[#102C20] transition-all group"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 bg-[#173D2B]/95 text-[#DFC282] hover:text-white border border-[#C9A45C]/60 shadow-2xl px-3 py-2 sm:px-4 sm:py-2.5 rounded-full flex items-center space-x-1.5 sm:space-x-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider backdrop-blur-md hover:bg-[#102C20] transition-all group"
           title="Consult with our Vaidya"
         >
           <Phone className="w-3.5 h-3.5 text-[#C9A45C] group-hover:scale-110 transition-transform" />

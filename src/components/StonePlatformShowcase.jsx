@@ -67,15 +67,15 @@ export default function StonePlatformShowcase({ onSelectProduct, onAddToCart }) 
       <div className="absolute top-8 right-8 text-xl opacity-70 animate-bounce hidden sm:block" style={{ animationDuration: '4s' }}>✨</div>
 
       {/* Section Sub-header / Instruction */}
-      <div className="text-center mb-2">
-        <span className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-[#DFC282] font-semibold">
+      <div className="text-center mb-4 sm:mb-6">
+        <span className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-[#DFC282] font-semibold bg-[#102C20]/70 px-3.5 py-1 rounded-full border border-[#C9A45C]/30 shadow-md backdrop-blur-sm">
           Interactive 3D Formulation Carousel
         </span>
       </div>
 
       {/* 3D ROUNDED SCROLL CAROUSEL STAGE */}
       <div 
-        className="relative w-full h-[340px] sm:h-[400px] flex items-center justify-center overflow-hidden touch-pan-y pt-2"
+        className="relative w-full h-[400px] sm:h-[450px] flex items-center justify-center overflow-visible touch-pan-y pt-6 sm:pt-4"
         style={{ perspective: 1200 }}
       >
         {/* Navigation Arrows */}
@@ -124,10 +124,10 @@ export default function StonePlatformShowcase({ onSelectProduct, onAddToCart }) 
             const spacingX = isMobile ? 120 : 210;
             const posX = diff * spacingX;
             const rotY = diff * (isMobile ? -26 : -22);
-            const scaleVal = isCenter ? (isMobile ? 1.18 : 1.14) : isImmediateNeighbor ? (isMobile ? 0.82 : 0.84) : 0.65;
+            const scaleVal = isCenter ? (isMobile ? 1.15 : 1.14) : isImmediateNeighbor ? (isMobile ? 0.82 : 0.84) : 0.65;
             const zIndexVal = 30 - Math.abs(diff) * 10;
             const opacityVal = isCenter ? 1 : isImmediateNeighbor ? (isMobile ? 0.65 : 0.75) : isFarNeighbor && !isMobile ? 0.35 : 0;
-            const posY = isCenter ? -12 : Math.abs(diff) * 12;
+            const posY = isCenter ? -4 : Math.abs(diff) * 12;
 
             return (
               <motion.div
@@ -155,28 +155,35 @@ export default function StonePlatformShowcase({ onSelectProduct, onAddToCart }) 
                 style={{
                   position: 'absolute',
                   transformStyle: 'preserve-3d',
+                  transformOrigin: '50% 85%',
                   pointerEvents: opacityVal === 0 ? 'none' : 'auto'
                 }}
                 className={`flex flex-col items-center justify-end cursor-pointer group ${
                   isCenter ? 'drop-shadow-[0_20px_35px_rgba(201,164,92,0.4)]' : 'filter brightness-85'
                 }`}
               >
-                {/* Product Name Badge Pill Above Formulation (Never Truncated on Mobile) */}
+                {/* Product Name Badge Pill Above Formulation (Crystal Clear & Fully Visible on Mobile) */}
                 {isCenter ? (
                   <div
-                    className="mb-2 sm:mb-2.5 px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold tracking-wider text-white uppercase shadow-xl ring-2 ring-[#C9A45C] text-center max-w-[280px] sm:max-w-none transition-all duration-300"
-                    style={{ backgroundColor: product.colorHex }}
+                    className="mb-3 px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold tracking-wider text-white uppercase shadow-2xl border-2 border-[#DFC282] ring-2 ring-[#C9A45C]/50 text-center whitespace-nowrap transition-all duration-300 drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]"
+                    style={{ 
+                      backgroundColor: product.colorHex,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.85), 0 0 1px #000'
+                    }}
                   >
                     {product.name}
                   </div>
-                ) : (
+                ) : isImmediateNeighbor ? (
                   <div
-                    className="mb-1.5 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium tracking-wide text-white/80 uppercase shadow-md text-center hidden sm:block whitespace-nowrap"
-                    style={{ backgroundColor: product.colorHex }}
+                    className="mb-2 px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold tracking-wide text-white uppercase shadow-lg border border-white/30 text-center max-w-[110px] sm:max-w-[150px] truncate whitespace-nowrap transition-all"
+                    style={{ 
+                      backgroundColor: product.colorHex,
+                      textShadow: '0 1px 3px rgba(0,0,0,0.9)'
+                    }}
                   >
                     {product.name.replace(/\s*\(.*?\)\s*/g, '')}
                   </div>
-                )}
+                ) : null}
 
                 {/* Packaging Box Visual Container (Large, Crisp & Visible on Mobile) */}
                 <div 
