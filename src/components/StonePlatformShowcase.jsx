@@ -75,7 +75,7 @@ export default function StonePlatformShowcase({ onSelectProduct, onAddToCart }) 
 
       {/* 3D ROUNDED SCROLL CAROUSEL STAGE */}
       <div 
-        className="relative w-full h-[320px] sm:h-[390px] flex items-center justify-center overflow-hidden touch-pan-y"
+        className="relative w-full h-[340px] sm:h-[400px] flex items-center justify-center overflow-hidden touch-pan-y pt-2"
         style={{ perspective: 1200 }}
       >
         {/* Navigation Arrows */}
@@ -161,15 +161,22 @@ export default function StonePlatformShowcase({ onSelectProduct, onAddToCart }) 
                   isCenter ? 'drop-shadow-[0_20px_35px_rgba(201,164,92,0.4)]' : 'filter brightness-85'
                 }`}
               >
-                {/* Product Badge Pill */}
-                <div
-                  className={`mb-2 px-3 py-1 rounded-full text-[9px] sm:text-[11px] font-bold tracking-wider text-white uppercase shadow-lg transition-transform duration-300 truncate max-w-[160px] sm:max-w-[200px] text-center ${
-                    isCenter ? 'scale-105 ring-2 ring-[#C9A45C]' : ''
-                  }`}
-                  style={{ backgroundColor: product.colorHex }}
-                >
-                  {product.name}
-                </div>
+                {/* Product Name Badge Pill Above Formulation (Never Truncated on Mobile) */}
+                {isCenter ? (
+                  <div
+                    className="mb-2 sm:mb-2.5 px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold tracking-wider text-white uppercase shadow-xl ring-2 ring-[#C9A45C] text-center max-w-[280px] sm:max-w-none transition-all duration-300"
+                    style={{ backgroundColor: product.colorHex }}
+                  >
+                    {product.name}
+                  </div>
+                ) : (
+                  <div
+                    className="mb-1.5 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium tracking-wide text-white/80 uppercase shadow-md text-center hidden sm:block whitespace-nowrap"
+                    style={{ backgroundColor: product.colorHex }}
+                  >
+                    {product.name.replace(/\s*\(.*?\)\s*/g, '')}
+                  </div>
+                )}
 
                 {/* Packaging Box Visual Container (Large, Crisp & Visible on Mobile) */}
                 <div 
