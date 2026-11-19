@@ -24,7 +24,8 @@ export default function ProductVisual({
         src={imageSrc}
         alt={`${product.name} - ${product.subtitle}`}
         className="max-h-full max-w-full object-contain filter drop-shadow-xl transition-transform duration-500 group-hover:scale-105 rounded-lg"
-        loading="lazy"
+        loading="eager"
+        decoding="sync"
       />
     </div>
   );

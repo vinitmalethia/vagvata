@@ -219,17 +219,12 @@ export default function HeroSection({ onSelectProduct, onAddToCart }) {
         </div>
 
         {/* Natural Stone Platform Showcase Displaying All Six Products */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.6 }}
-          className="mt-6 sm:mt-8"
-        >
+        <div className="mt-6 sm:mt-8">
           <StonePlatformShowcase 
             onSelectProduct={onSelectProduct} 
             onAddToCart={onAddToCart} 
           />
-        </motion.div>
+        </div>
 
       </div>
     </section>

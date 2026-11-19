@@ -69,17 +69,15 @@ export default function GallerySection() {
         {/* Gallery Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {images.map((item, idx) => (
-            <motion.div
+            <div
               key={idx}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.08 }}
-              className="group relative rounded-2xl overflow-hidden aspect-[4/3] sm:aspect-square bg-[#102C20] shadow-md cursor-pointer border border-[#C9A45C]/30"
+              className="group relative rounded-2xl overflow-hidden aspect-[4/3] sm:aspect-square bg-[#102C20] shadow-md cursor-pointer border border-[#C9A45C]/30 hover:scale-[1.02] transition-transform duration-300"
             >
               <img
                 src={item.src}
                 alt={item.title}
+                loading="eager"
+                decoding="sync"
                 className="w-full h-full object-cover filter brightness-95 group-hover:scale-110 group-hover:brightness-90 transition-all duration-700 ease-out"
               />
 
@@ -95,7 +93,7 @@ export default function GallerySection() {
                   {item.subtitle}
                 </p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 

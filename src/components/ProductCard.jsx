@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Star, ShoppingBag, Eye, Check, ShieldCheck } from 'lucide-react';
 import ProductVisual from './ProductVisual';
 
@@ -14,14 +13,9 @@ export default function ProductCard({ product, onSelectProduct, onAddToCart }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      whileHover={{ y: -6 }}
-      transition={{ duration: 0.4 }}
+    <div
       onClick={() => onSelectProduct(product)}
-      className="group cursor-pointer rounded-2xl bg-white border border-[#C9A45C]/35 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden"
+      className="group cursor-pointer rounded-2xl bg-white border border-[#C9A45C]/35 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-1.5"
     >
       {/* Card Header & Color Accent Bar */}
       <div>
@@ -129,6 +123,6 @@ export default function ProductCard({ product, onSelectProduct, onAddToCart }) {
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
