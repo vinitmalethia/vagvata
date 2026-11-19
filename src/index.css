@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  --color-forest: #173D2B;
+  --color-forest-dark: #102C20;
+  --color-ivory: #F7F0DF;
+  --color-ivory-light: #FDFBF7;
+  --color-ivory-dark: #EFE5CE;
+  --color-gold: #C9A45C;
+  --color-gold-light: #DFC282;
+  --color-gold-dark: #A48139;
+  --color-sage: #DCE5D5;
+  --color-sage-light: #EDF3E9;
+  --color-sage-dark: #BACAB0;
+  --color-brown: #79583B;
+  --color-dark-text: #263629;
+  --color-dark-text-muted: #4A5B4D;
+
+  --font-serif: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-sans);
+    color: #263629;
+    background-color: #F7F0DF;
+  }
+
+  h1, h2, h3, h4, .font-serif {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Custom scrollbar for luxury feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F7F0DF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C9A45C;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #173D2B;
+}
+
+/* Gold shimmer animation */
+@keyframes gold-shine {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #DFC282 0%, #C9A45C 50%, #9C7933 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-border-gradient {
+  border-image: linear-gradient(to right, #DFC282, #C9A45C, #DFC282) 1;
+}
+
+.bg-pattern-botanical {
+  background-image: radial-gradient(#173D2B 0.75px, transparent 0.75px), radial-gradient(#C9A45C 0.75px, #F7F0DF 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  background-color: #F7F0DF;
+}
