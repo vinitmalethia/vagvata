@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { 
   User, 
   ShoppingBag, 
@@ -33,13 +35,13 @@ export default function CustomerAccountPage() {
   });
   const [addressSaved, setAddressSaved] = useState(false);
 
-  // Load orders from localStorage
+  // Load orders with Real-Time Firestore Sync & Offline Cache Fallback
   useEffect(() => {
+    // 1. Initial cached orders
     try {
       const stored = localStorage.getItem('vagvat_orders');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Filter orders for this user if email is attached, or show user's orders
         const userOrders = parsed.filter(o => !o.customerEmail || o.customerEmail === currentUser?.email);
         setOrders(userOrders);
       } else {
@@ -49,12 +51,64 @@ export default function CustomerAccountPage() {
       console.warn('Orders load error:', e);
     }
 
+    // 2. Real-time Firestore sync for customer orders
+    let unsubscribe = () => {};
+    if (db && currentUser?.email) {
+      try {
+        const q = query(
+          collection(db, 'orders'),
+          where('customerEmail', '==', currentUser.email)
+        );
+        unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            const customerOrders = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              customerOrders.push({
+                id: docSnap.id,
+                orderId: data.orderId || docSnap.id,
+                customerName: data.customerName || 'Customer',
+                customerEmail: data.customerEmail || '',
+                customerPhone: data.customerPhone || '',
+                shippingAddress: data.shippingAddress || '',
+                date: data.date || (data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent'),
+                total: Number(data.total) || 0,
+                paymentMethod: data.paymentMethod || 'Online Payment (Razorpay)',
+                paymentStatus: data.paymentStatus || 'Paid',
+                status: data.status === 'Delivered' ? 'Delivered' : 'Ordered',
+                items: data.items || [],
+                createdAt: data.createdAt || null
+              });
+            });
+
+            customerOrders.sort((a, b) => {
+              const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+              const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+              return timeB - timeA;
+            });
+
+            if (customerOrders.length > 0) {
+              setOrders(customerOrders);
+            }
+          },
+          (err) => {
+            console.warn('Customer live orders listener notice:', err);
+          }
+        );
+      } catch (err) {
+        console.warn('Error setting up customer orders listener:', err);
+      }
+    }
+
     try {
       const savedAddr = localStorage.getItem(`vagvat_addr_${currentUser?.uid}`);
       if (savedAddr) {
         setAddressData(JSON.parse(savedAddr));
       }
     } catch {}
+
+    return () => unsubscribe();
   }, [currentUser]);
 
   const handleSaveAddress = (e) => {

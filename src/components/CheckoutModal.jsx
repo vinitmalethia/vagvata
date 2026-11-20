@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, ShieldCheck, Truck, CreditCard, Lock, ArrowLeft, ArrowRight, Sparkles, ShoppingBag, AlertCircle } from 'lucide-react';
 import ProductVisual from './ProductVisual';
 import { useAuth } from '../context/AuthContext';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted }) {
   const { currentUser } = useAuth();
@@ -22,6 +24,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
 
   // Reset state & auto-fill from currentUser when modal is opened
   useEffect(() => {
@@ -31,6 +34,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       setSubmitAttempted(false);
       setFormErrors({});
       setTouched({});
+      setCheckoutError('');
       if (currentUser) {
         setFormData(prev => ({
           ...prev,
@@ -103,7 +107,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
     setFormErrors(validate(formData));
   };
 
-  const handleNextStep = (e) => {
+  const handleNextStep = async (e) => {
     e.preventDefault();
     if (step === 1) {
       setSubmitAttempted(true);
@@ -123,38 +127,71 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         return;
       }
 
+      // Prevent duplicate submissions from repeated clicks
+      if (isProcessing) return;
+
       setIsProcessing(true);
-      setTimeout(() => {
+      setCheckoutError('');
+
+      try {
         const generatedId = `VAGVAT-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        const orderData = {
+          orderId: generatedId,
+          customerName: formData.fullName.trim(),
+          customerEmail: formData.email.trim(),
+          customerPhone: formData.phone.trim(),
+          shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
+          addressDetails: {
+            street: formData.address.trim(),
+            city: formData.city.trim(),
+            pincode: formData.pincode.trim()
+          },
+          date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+          total: Number(finalTotal),
+          subtotal: Number(subtotal),
+          discountAmount: Number(discountAmount),
+          shippingCost: Number(shippingCost),
+          paymentMethod: 'Online Payment (Razorpay)',
+          paymentStatus: 'Paid',
+          status: 'Ordered',
+          userId: currentUser?.uid || null,
+          createdAt: serverTimestamp(),
+          items: cartItems.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            price: Number(item.product.price),
+            volume: item.product.volume || item.product.strength || ''
+          }))
+        };
+
+        // 1. Central database write to Cloud Firestore
+        if (!db) {
+          throw new Error('Database service is not ready. Please check your internet connection.');
+        }
+
+        await setDoc(doc(db, 'orders', generatedId), orderData);
+
+        // 2. Also keep local storage updated as offline cache
+        try {
+          const localOrder = {
+            ...orderData,
+            createdAt: new Date().toISOString()
+          };
+          const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
+          localStorage.setItem('vagvat_orders', JSON.stringify([localOrder, ...existing]));
+        } catch {}
+
         setOrderId(generatedId);
         setIsProcessing(false);
         setStep(3);
 
-        // Record order in storage for customer and admin portal
-        try {
-          const newOrder = {
-            orderId: generatedId,
-            customerName: formData.fullName.trim(),
-            customerEmail: formData.email.trim(),
-            customerPhone: formData.phone.trim(),
-            shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
-            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-            total: finalTotal,
-            paymentMethod: 'Online Payment (Razorpay)',
-            status: 'Ordered',
-            items: cartItems.map(item => ({
-              name: item.product.name,
-              quantity: item.quantity,
-              price: item.product.price,
-              volume: item.product.volume || item.product.strength
-            }))
-          };
-          const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
-          localStorage.setItem('vagvat_orders', JSON.stringify([newOrder, ...existing]));
-        } catch {}
-
         if (onOrderCompleted) onOrderCompleted(generatedId);
-      }, 1500);
+      } catch (err) {
+        console.error('Failed to save order to Firestore:', err);
+        setIsProcessing(false);
+        setCheckoutError(err.message || 'Unable to place order. Please check your network connection.');
+      }
     }
   };
 
@@ -449,6 +486,14 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                     <span>Back to Address</span>
                   </button>
                 </div>
+
+                {/* Database / Checkout Error Alert */}
+                {checkoutError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-2 text-xs text-red-700 animate-fadeIn">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <span>{checkoutError}</span>
+                  </div>
+                )}
 
                 {/* Exclusive Online Payment Option via Razorpay */}
                 <div className="space-y-3">

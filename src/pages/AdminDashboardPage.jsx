@@ -35,6 +35,15 @@ import {
 } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
 import ProductVisual from '../components/ProductVisual';
+import { 
+  collection, 
+  onSnapshot, 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  serverTimestamp 
+} from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function AdminDashboardPage() {
   const { currentUser, logout } = useAuth();
@@ -45,8 +54,11 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // --- Orders State ---
+  // --- Orders State (Synchronized via Cloud Firestore) ---
   const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState(null);
+  const [statusUpdating, setStatusUpdating] = useState({});
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('All');
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -95,27 +107,73 @@ export default function AdminDashboardPage() {
   const [dispensaryActive, setDispensaryActive] = useState(true);
   const [websiteSavedNotice, setWebsiteSavedNotice] = useState(false);
 
-  // Initial Load from localStorage (strictly real data, demo data purged)
+  // Real-Time Cross-Device Synchronization via Cloud Firestore
   useEffect(() => {
-    // 1. Load orders
-    try {
-      const storedOrders = localStorage.getItem('vagvat_orders');
-      if (storedOrders) {
-        const parsed = JSON.parse(storedOrders);
-        const DEMO_IDS = ['VAGVAT-920184', 'VAGVAT-891042', 'VAGVAT-773820', 'VAGVAT-662910', 'VAGVAT-839201'];
-        const realOrders = parsed.filter(o => !DEMO_IDS.includes(o.orderId));
-        const normalized = realOrders.map(o => ({
-          ...o,
-          status: o.status === 'Delivered' ? 'Delivered' : 'Ordered'
-        }));
-        setOrders(normalized);
-        localStorage.setItem('vagvat_orders', JSON.stringify(normalized));
-      } else {
-        setOrders([]);
-      }
-    } catch {
-      setOrders([]);
+    // 1. Synchronize Orders in Real Time from Firestore
+    if (!db) {
+      setOrdersLoading(false);
+      setOrdersError('Database connection unavailable.');
+      return;
     }
+
+    setOrdersLoading(true);
+    const ordersCol = collection(db, 'orders');
+
+    const unsubscribe = onSnapshot(
+      ordersCol,
+      (snapshot) => {
+        const liveOrders = [];
+        const DEMO_IDS = ['VAGVAT-920184', 'VAGVAT-891042', 'VAGVAT-773820', 'VAGVAT-662910', 'VAGVAT-839201'];
+        
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const docOrderId = data.orderId || docSnap.id;
+          if (DEMO_IDS.includes(docOrderId)) return; // Exclude legacy demo orders
+
+          liveOrders.push({
+            id: docSnap.id,
+            orderId: docOrderId,
+            customerName: data.customerName || 'Customer',
+            customerEmail: data.customerEmail || '',
+            customerPhone: data.customerPhone || '',
+            shippingAddress: data.shippingAddress || '',
+            date: data.date || (data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent'),
+            total: Number(data.total) || 0,
+            paymentMethod: data.paymentMethod || 'Online Payment (Razorpay)',
+            paymentStatus: data.paymentStatus || 'Paid',
+            status: data.status === 'Delivered' ? 'Delivered' : 'Ordered',
+            items: data.items || [],
+            createdAt: data.createdAt || null
+          });
+        });
+
+        // Sort descending: newest orders first
+        liveOrders.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+          return timeB - timeA;
+        });
+
+        setOrders(liveOrders);
+        setOrdersLoading(false);
+        setOrdersError(null);
+
+        // Keep local cache updated for offline resilience
+        try {
+          localStorage.setItem('vagvat_orders', JSON.stringify(liveOrders));
+        } catch {}
+      },
+      (error) => {
+        console.warn('Real-time Firestore listener notice:', error);
+        setOrdersError(error.message);
+        setOrdersLoading(false);
+        // Fallback to local storage if offline
+        try {
+          const cached = localStorage.getItem('vagvat_orders');
+          if (cached) setOrders(JSON.parse(cached));
+        } catch {}
+      }
+    );
 
     // 2. Load inventory with stock counts
     try {
@@ -134,12 +192,34 @@ export default function AdminDashboardPage() {
     } catch {
       setInventory(PRODUCTS);
     }
+
+    return () => unsubscribe();
   }, []);
 
-  // Update Order Status Handler
-  const handleUpdateOrderStatus = (orderId, newStatus) => {
+  // Update Order Status directly in Cloud Firestore (Cross-Device Sync)
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    // 1. Optimistic UI update on current device
     const updated = orders.map(o => o.orderId === orderId ? { ...o, status: newStatus } : o);
     setOrders(updated);
+    setStatusUpdating(prev => ({ ...prev, [orderId]: true }));
+
+    // 2. Direct persistence to Cloud Firestore
+    if (db) {
+      try {
+        await updateDoc(doc(db, 'orders', orderId), {
+          status: newStatus,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error('Failed to update order status in Firestore:', err);
+        alert('Could not update status in cloud database: ' + (err.message || 'Network error'));
+      } finally {
+        setStatusUpdating(prev => ({ ...prev, [orderId]: false }));
+      }
+    } else {
+      setStatusUpdating(prev => ({ ...prev, [orderId]: false }));
+    }
+
     try {
       localStorage.setItem('vagvat_orders', JSON.stringify(updated));
     } catch {}
@@ -250,16 +330,25 @@ export default function AdminDashboardPage() {
     } catch {}
   };
 
-  // Clean Store Data / Reset for Production Launch
-  const handleCleanStoreData = () => {
-    if (window.confirm('Reset all demo orders and customer records for live launch?')) {
+  // Clean Store Data / Reset for Production Launch (Purges Cloud Firestore and Local Cache)
+  const handleCleanStoreData = async () => {
+    if (window.confirm('Reset all test orders and records for live launch? This will synchronize a clean zero-state across all devices.')) {
+      if (db && orders.length > 0) {
+        try {
+          for (const order of orders) {
+            await deleteDoc(doc(db, 'orders', order.orderId));
+          }
+        } catch (err) {
+          console.warn('Firestore purge notice:', err);
+        }
+      }
       try {
         localStorage.removeItem('vagvat_orders');
         localStorage.removeItem('vagvat_customer_reviews');
       } catch {}
       setOrders([]);
       setReviews([]);
-      alert('Store data cleaned! Ready for official customer orders.');
+      alert('Store data cleaned! Zero-state synchronized across all devices.');
     }
   };
 
