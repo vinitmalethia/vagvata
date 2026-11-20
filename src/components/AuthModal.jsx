@@ -115,6 +115,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'customer' })
         msg = 'An account with this email already exists. Please sign in.';
       } else if (err.code === 'auth/weak-password') {
         msg = 'Password should be at least 6 characters.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        msg = 'Email/Password sign-in is disabled in Firebase Console. Please enable it under Authentication > Sign-in method in Firebase Console.';
       }
       setCustomerError(msg);
     } finally {
@@ -178,6 +180,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'customer' })
       let msg = err.message || 'Admin authentication failed.';
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         msg = 'Invalid administrative credentials. Access denied.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        msg = 'Email/Password sign-in is disabled in Firebase Console. Please enable Email/Password under Authentication > Sign-in method.';
       }
       setAdminError(msg);
     } finally {
@@ -571,7 +575,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'customer' })
                       required
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      placeholder="admin@vagvatayurveda.com"
+                      placeholder="sachin@gmail.com"
                       className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#C9A45C]/40 bg-[#0D241A] text-xs text-[#F7F0DF] placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#C9A45C]"
                     />
                   </div>

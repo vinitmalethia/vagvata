@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, ShieldCheck, Truck, CreditCard, Lock, ArrowLeft, ArrowRight, Sparkles, ShoppingBag } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, Truck, CreditCard, Lock, ArrowLeft, ArrowRight, Sparkles, ShoppingBag, AlertCircle } from 'lucide-react';
 import ProductVisual from './ProductVisual';
+import { useAuth } from '../context/AuthContext';
 
 export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted }) {
+  const { currentUser } = useAuth();
   const [step, setStep] = useState(1); // 1: Address, 2: Shipping & Payment, 3: Success
   const [formData, setFormData] = useState({
     fullName: '',
@@ -15,39 +17,112 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
     pincode: '',
     paymentMethod: 'upi', // upi, card, cod, netbanking
   });
+  const [formErrors, setFormErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Reset state when modal is opened
+  // Reset state & auto-fill from currentUser when modal is opened
   useEffect(() => {
     if (isOpen) {
       setStep(1);
       setIsProcessing(false);
+      setSubmitAttempted(false);
+      setFormErrors({});
+      setTouched({});
+      if (currentUser) {
+        setFormData(prev => ({
+          ...prev,
+          fullName: prev.fullName || currentUser.displayName || '',
+          email: prev.email || currentUser.email || ''
+        }));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, currentUser]);
 
   const subtotal = checkoutData?.subtotal || cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
   const discountAmount = checkoutData?.discountAmount || 0;
   const shippingCost = checkoutData?.shippingCost || (subtotal >= 499 ? 0 : 50);
   const finalTotal = checkoutData?.finalTotal || (subtotal - discountAmount + shippingCost);
 
+  // Field validation rules
+  const validate = (values) => {
+    const errs = {};
+    if (!values.fullName || !values.fullName.trim()) {
+      errs.fullName = 'Full Name is mandatory';
+    } else if (values.fullName.trim().length < 2) {
+      errs.fullName = 'Please enter your complete name';
+    }
+
+    const cleanPhone = (values.phone || '').replace(/[\s-]/g, '');
+    if (!cleanPhone.trim()) {
+      errs.phone = 'Phone number is mandatory for tracking & delivery updates';
+    } else if (cleanPhone.length < 10) {
+      errs.phone = 'Please enter a valid 10-digit mobile number';
+    }
+
+    if (!values.email || !values.email.trim()) {
+      errs.email = 'Email Address is mandatory for order confirmation & invoice';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
+      errs.email = 'Please enter a valid email address';
+    }
+
+    if (!values.address || !values.address.trim()) {
+      errs.address = 'Complete street address is mandatory for dispatch';
+    } else if (values.address.trim().length < 5) {
+      errs.address = 'Please enter flat/house no., street & landmark';
+    }
+
+    if (!values.city || !values.city.trim()) {
+      errs.city = 'City / Town is mandatory';
+    }
+
+    const cleanPin = (values.pincode || '').trim();
+    if (!cleanPin) {
+      errs.pincode = 'PIN Code is mandatory';
+    } else if (!/^\d{6}$/.test(cleanPin)) {
+      errs.pincode = 'PIN Code must be a 6-digit number';
+    }
+
+    return errs;
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const updated = { ...formData, [name]: value };
+    setFormData(updated);
+    if (submitAttempted || touched[name]) {
+      setFormErrors(validate(updated));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    setFormErrors(validate(formData));
   };
 
   const handleNextStep = (e) => {
     e.preventDefault();
     if (step === 1) {
-      if (!formData.fullName.trim() || !formData.phone.trim() || !formData.address.trim() || !formData.pincode.trim()) {
-        alert('Please fill in your complete delivery details (Name, Phone, Address, PIN code).');
-        return;
-      }
-      if (formData.phone.trim().length < 10) {
-        alert('Please enter a valid 10-digit mobile number for order delivery updates.');
+      setSubmitAttempted(true);
+      const errs = validate(formData);
+      setFormErrors(errs);
+      if (Object.keys(errs).length > 0) {
         return;
       }
       setStep(2);
     } else if (step === 2) {
+      // Re-verify step 1 data before processing order
+      const errs = validate(formData);
+      if (Object.keys(errs).length > 0) {
+        setStep(1);
+        setSubmitAttempted(true);
+        setFormErrors(errs);
+        return;
+      }
+
       setIsProcessing(true);
       setTimeout(() => {
         const generatedId = `VAGVAT-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -59,10 +134,10 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         try {
           const newOrder = {
             orderId: generatedId,
-            customerName: formData.fullName,
-            customerEmail: formData.email,
-            customerPhone: formData.phone,
-            shippingAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}`,
+            customerName: formData.fullName.trim(),
+            customerEmail: formData.email.trim(),
+            customerPhone: formData.phone.trim(),
+            shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
             date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
             total: finalTotal,
             status: 'Processing',
@@ -155,14 +230,30 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
 
             {/* Step 1: Address Form */}
             {step === 1 && (cartItems.length > 0 || checkoutData) && (
-              <form onSubmit={handleNextStep} className="p-6 space-y-4">
-                <h4 className="font-serif text-base font-bold text-[#173D2B]">
-                  1. Shipping & Vaidya Dispatch Information
-                </h4>
+              <form onSubmit={handleNextStep} noValidate className="p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-1 border-b border-[#C9A45C]/20">
+                  <h4 className="font-serif text-base font-bold text-[#173D2B]">
+                    1. Shipping & Vaidya Dispatch Information
+                  </h4>
+                  <span className="text-[11px] font-medium text-[#79583B]">
+                    <span className="text-red-500 font-bold">*</span> All fields are mandatory to order
+                  </span>
+                </div>
+
+                {/* Validation alert banner if submitted with errors */}
+                {submitAttempted && Object.keys(formErrors).length > 0 && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-2 text-xs text-red-700 animate-fadeIn">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <span>Please fill in all mandatory fields marked with an asterisk (*) before proceeding to payment.</span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  {/* Full Name */}
                   <div>
-                    <label className="block text-[#4A5B4D] mb-1 font-medium">Full Name *</label>
+                    <label className="block text-[#4A5B4D] mb-1 font-medium">
+                      Full Name <span className="text-red-500 font-bold">*</span>
+                    </label>
                     <input
                       type="text"
                       name="fullName"
@@ -170,12 +261,26 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                       placeholder="e.g. Ananya Sharma"
                       value={formData.fullName}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-md border border-gray-300 bg-white focus:outline-none focus:border-[#C9A45C]"
+                      onBlur={handleBlur}
+                      className={`w-full px-3 py-2.5 rounded-md border bg-white focus:outline-none transition-colors ${
+                        (submitAttempted || touched.fullName) && formErrors.fullName
+                          ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500'
+                          : 'border-gray-300 focus:border-[#C9A45C]'
+                      }`}
                     />
+                    {(submitAttempted || touched.fullName) && formErrors.fullName && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center space-x-1">
+                        <span>•</span>
+                        <span>{formErrors.fullName}</span>
+                      </p>
+                    )}
                   </div>
 
+                  {/* Phone Number */}
                   <div>
-                    <label className="block text-[#4A5B4D] mb-1 font-medium">Phone Number (For Tracking & Vaidya Support) *</label>
+                    <label className="block text-[#4A5B4D] mb-1 font-medium">
+                      Phone Number (For Tracking & Vaidya Support) <span className="text-red-500 font-bold">*</span>
+                    </label>
                     <input
                       type="tel"
                       name="phone"
@@ -183,24 +288,53 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                       placeholder="+91 98765 43210"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-md border border-gray-300 bg-white focus:outline-none focus:border-[#C9A45C]"
+                      onBlur={handleBlur}
+                      className={`w-full px-3 py-2.5 rounded-md border bg-white focus:outline-none transition-colors ${
+                        (submitAttempted || touched.phone) && formErrors.phone
+                          ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500'
+                          : 'border-gray-300 focus:border-[#C9A45C]'
+                      }`}
                     />
+                    {(submitAttempted || touched.phone) && formErrors.phone && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center space-x-1">
+                        <span>•</span>
+                        <span>{formErrors.phone}</span>
+                      </p>
+                    )}
                   </div>
 
+                  {/* Email Address - Now strictly mandatory with * and validation */}
                   <div className="sm:col-span-2">
-                    <label className="block text-[#4A5B4D] mb-1 font-medium">Email Address</label>
+                    <label className="block text-[#4A5B4D] mb-1 font-medium">
+                      Email Address (For Order Invoice & Tracking) <span className="text-red-500 font-bold">*</span>
+                    </label>
                     <input
                       type="email"
                       name="email"
+                      required
                       placeholder="your.email@example.com"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-md border border-gray-300 bg-white focus:outline-none focus:border-[#C9A45C]"
+                      onBlur={handleBlur}
+                      className={`w-full px-3 py-2.5 rounded-md border bg-white focus:outline-none transition-colors ${
+                        (submitAttempted || touched.email) && formErrors.email
+                          ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500'
+                          : 'border-gray-300 focus:border-[#C9A45C]'
+                      }`}
                     />
+                    {(submitAttempted || touched.email) && formErrors.email && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center space-x-1">
+                        <span>•</span>
+                        <span>{formErrors.email}</span>
+                      </p>
+                    )}
                   </div>
 
+                  {/* Street Address */}
                   <div className="sm:col-span-2">
-                    <label className="block text-[#4A5B4D] mb-1 font-medium">Complete Street Address *</label>
+                    <label className="block text-[#4A5B4D] mb-1 font-medium">
+                      Complete Street Address <span className="text-red-500 font-bold">*</span>
+                    </label>
                     <textarea
                       name="address"
                       required
@@ -208,12 +342,26 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                       placeholder="House / Flat No., Apartment, Landmark, Street"
                       value={formData.address}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 rounded-md border border-gray-300 bg-white focus:outline-none focus:border-[#C9A45C]"
+                      onBlur={handleBlur}
+                      className={`w-full px-3 py-2 rounded-md border bg-white focus:outline-none transition-colors ${
+                        (submitAttempted || touched.address) && formErrors.address
+                          ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500'
+                          : 'border-gray-300 focus:border-[#C9A45C]'
+                      }`}
                     />
+                    {(submitAttempted || touched.address) && formErrors.address && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center space-x-1">
+                        <span>•</span>
+                        <span>{formErrors.address}</span>
+                      </p>
+                    )}
                   </div>
 
+                  {/* City */}
                   <div>
-                    <label className="block text-[#4A5B4D] mb-1 font-medium">City *</label>
+                    <label className="block text-[#4A5B4D] mb-1 font-medium">
+                      City <span className="text-red-500 font-bold">*</span>
+                    </label>
                     <input
                       type="text"
                       name="city"
@@ -221,21 +369,47 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                       placeholder="e.g. Mumbai, Bengaluru, Delhi"
                       value={formData.city}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-md border border-gray-300 bg-white focus:outline-none focus:border-[#C9A45C]"
+                      onBlur={handleBlur}
+                      className={`w-full px-3 py-2.5 rounded-md border bg-white focus:outline-none transition-colors ${
+                        (submitAttempted || touched.city) && formErrors.city
+                          ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500'
+                          : 'border-gray-300 focus:border-[#C9A45C]'
+                      }`}
                     />
+                    {(submitAttempted || touched.city) && formErrors.city && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center space-x-1">
+                        <span>•</span>
+                        <span>{formErrors.city}</span>
+                      </p>
+                    )}
                   </div>
 
+                  {/* PIN Code */}
                   <div>
-                    <label className="block text-[#4A5B4D] mb-1 font-medium">PIN Code *</label>
+                    <label className="block text-[#4A5B4D] mb-1 font-medium">
+                      PIN Code <span className="text-red-500 font-bold">*</span>
+                    </label>
                     <input
                       type="text"
                       name="pincode"
+                      maxLength={6}
                       required
                       placeholder="6-digit PIN"
                       value={formData.pincode}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-md border border-gray-300 bg-white focus:outline-none focus:border-[#C9A45C]"
+                      onBlur={handleBlur}
+                      className={`w-full px-3 py-2.5 rounded-md border bg-white focus:outline-none transition-colors ${
+                        (submitAttempted || touched.pincode) && formErrors.pincode
+                          ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500'
+                          : 'border-gray-300 focus:border-[#C9A45C]'
+                      }`}
                     />
+                    {(submitAttempted || touched.pincode) && formErrors.pincode && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center space-x-1">
+                        <span>•</span>
+                        <span>{formErrors.pincode}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -249,7 +423,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                 <div className="pt-2 flex justify-end">
                   <button
                     type="submit"
-                    className="w-full sm:w-auto px-8 py-3 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] text-[#102C20] font-bold text-xs tracking-wider uppercase transition-colors shadow flex items-center justify-center space-x-2"
+                    className="w-full sm:w-auto px-8 py-3 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] text-[#102C20] font-bold text-xs tracking-wider uppercase transition-colors shadow flex items-center justify-center space-x-2 cursor-pointer"
                   >
                     <span>Proceed to Payment</span>
                     <ArrowRight className="w-4 h-4" />
@@ -268,7 +442,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="text-xs text-[#79583B] hover:text-[#173D2B] flex items-center space-x-1"
+                    className="text-xs text-[#79583B] hover:text-[#173D2B] flex items-center space-x-1 cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back to Address</span>
@@ -342,8 +516,12 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                     <span className="font-semibold text-[#173D2B]">{formData.fullName} ({formData.phone})</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-[#4A5B4D]">Email Confirmation</span>
+                    <span className="text-[#173D2B] font-medium">{formData.email}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Shipping To</span>
-                    <span className="text-[#173D2B] truncate max-w-xs">{formData.city}, PIN {formData.pincode}</span>
+                    <span className="text-[#173D2B] truncate max-w-xs">{formData.address}, {formData.city}, PIN {formData.pincode}</span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-gray-100 font-bold text-sm">
                     <span className="text-[#173D2B]">Total Payable</span>
@@ -355,7 +533,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-3.5 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] disabled:opacity-50 text-[#102C20] font-bold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center justify-center space-x-2"
+                  className="w-full py-3.5 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] disabled:opacity-50 text-[#102C20] font-bold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center justify-center space-x-2 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
                   <span>
@@ -390,14 +568,14 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                     <span>Estimated Delivery: Within 2 to 4 Business Days</span>
                   </div>
                   <p className="text-[#4A5B4D] text-[11px]">
-                    We have dispatched your order details to <strong className="text-[#173D2B]">{formData.phone}</strong>. 
+                    We have dispatched your order details and invoice to <strong className="text-[#173D2B]">{formData.email}</strong> and tracking link via SMS to <strong className="text-[#173D2B]">{formData.phone}</strong>.
                     Our apothecary team will carefully hand-pack your fresh formulations with sacred care.
                   </p>
                 </div>
 
                 <button
                   onClick={onClose}
-                  className="px-8 py-3 rounded-md bg-[#173D2B] hover:bg-[#102C20] text-[#F7F0DF] text-xs font-semibold tracking-wider uppercase transition-colors"
+                  className="px-8 py-3 rounded-md bg-[#173D2B] hover:bg-[#102C20] text-[#F7F0DF] text-xs font-semibold tracking-wider uppercase transition-colors cursor-pointer"
                 >
                   Continue Exploring Vagvat Ayurveda
                 </button>
