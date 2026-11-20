@@ -123,13 +123,12 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
                   </div>
 
                   {/* Price Banner */}
-                  <div className="mt-4 p-3.5 rounded-xl bg-[#F7F0DF]/60 border border-[#C9A45C]/35 flex items-baseline space-x-3">
-                    <span className="text-2xl font-bold text-[#173D2B]">₹{product.price}</span>
-                    <span className="text-sm text-[#79583B]/70 line-through">₹{product.originalPrice}</span>
-                    <span className="text-xs text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
-                      25% SAVINGS
-                    </span>
-                    <span className="text-[11px] text-[#4A5B4D] ml-auto">Free Shipping</span>
+                  <div className="mt-4 p-3.5 rounded-xl bg-[#F7F0DF]/60 border border-[#C9A45C]/35 flex items-baseline justify-between">
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl font-bold text-[#173D2B]">₹{product.price.toLocaleString('en-IN')}</span>
+                      <span className="text-xs text-[#79583B]">MRP (Incl. of all taxes)</span>
+                    </div>
+                    <span className="text-xs text-[#173D2B] bg-[#DCE5D5]/80 px-2.5 py-1 rounded-full font-semibold">Free Insured Shipping</span>
                   </div>
 
                   {/* Tabs */}

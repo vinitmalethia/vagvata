@@ -203,9 +203,8 @@ export default function StonePlatformShowcase({ onSelectProduct, onAddToCart }) 
 
                 {/* Subtitle / Volume */}
                 <div className={`mt-2 text-center transition-all ${isCenter ? 'opacity-100' : 'opacity-70'}`}>
-                  <span className="text-xs sm:text-sm font-bold text-[#F7F0DF] drop-shadow-sm">₹{product.price}</span>
-                  <span className="ml-1 text-[10px] text-[#DFC282]/80 line-through">₹{product.originalPrice}</span>
-                  <span className="block text-[9px] sm:text-[10px] text-[#DCE5D5]/80 font-medium truncate max-w-[130px] mx-auto">
+                  <span className="text-xs sm:text-sm font-bold text-[#F7F0DF] drop-shadow-sm">₹{product.price.toLocaleString('en-IN')}</span>
+                  <span className="block text-[9px] sm:text-[10px] text-[#DCE5D5]/80 font-medium truncate max-w-[130px] mx-auto mt-0.5">
                     {product.strength || product.capsuleCount}
                   </span>
                 </div>

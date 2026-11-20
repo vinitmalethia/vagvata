@@ -749,7 +749,7 @@ export default function AdminDashboardPage() {
                           <td className="p-4 text-[#DCE5D5]/80 font-mono text-[11px]">{p.volume || p.strength}</td>
                           <td className="p-4">
                             <span className="font-bold text-white">₹{p.price}</span>
-                            {p.originalPrice && (
+                            {p.originalPrice && p.originalPrice > p.price && (
                               <span className="text-[10px] text-[#DFC282]/60 line-through ml-1.5">₹{p.originalPrice}</span>
                             )}
                           </td>

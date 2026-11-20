@@ -145,8 +145,7 @@ export default function SearchModal({ isOpen, onClose, onSelectProduct }) {
 
                     <div className="flex items-center space-x-3 pl-2">
                       <div className="text-right">
-                        <span className="font-bold text-sm text-[#173D2B]">₹{product.price}</span>
-                        <span className="text-[10px] text-gray-400 line-through block">₹{product.originalPrice}</span>
+                        <span className="font-bold text-sm text-[#173D2B]">₹{product.price.toLocaleString('en-IN')}</span>
                       </div>
                       <ArrowRight className="w-4 h-4 text-[#C9A45C] group-hover:translate-x-1 transition-transform" />
                     </div>

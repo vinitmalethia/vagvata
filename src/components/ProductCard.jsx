@@ -90,14 +90,11 @@ export default function ProductCard({ product, onSelectProduct, onAddToCart }) {
           <div className="flex flex-col">
             <div className="flex items-baseline space-x-2">
               <span className="text-xl font-bold text-[#173D2B]">
-                ₹{product.price}
-              </span>
-              <span className="text-xs text-[#79583B]/70 line-through">
-                ₹{product.originalPrice}
+                ₹{product.price.toLocaleString('en-IN')}
               </span>
             </div>
-            <span className="text-[10px] text-emerald-700 font-semibold">
-              Save ₹{product.originalPrice - product.price} (25% off)
+            <span className="text-[10px] text-[#4A5B4D] font-medium">
+              MRP (Incl. of all taxes)
             </span>
           </div>
 
