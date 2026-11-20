@@ -1,34 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import AnnouncementBar from './components/AnnouncementBar';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 
-import HomePage from './pages/HomePage';
-import ShopPage from './pages/ShopPage';
-import StoryPage from './pages/StoryPage';
-import WhyChooseUsPage from './pages/WhyChooseUsPage';
-import ReviewsPage from './pages/ReviewsPage';
-import ContactPage from './pages/ContactPage';
-import LoginPage from './pages/LoginPage';
-import CustomerAccountPage from './pages/CustomerAccountPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ShopPage = lazy(() => import('./pages/ShopPage'));
+const StoryPage = lazy(() => import('./pages/StoryPage'));
+const WhyChooseUsPage = lazy(() => import('./pages/WhyChooseUsPage'));
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const CustomerAccountPage = lazy(() => import('./pages/CustomerAccountPage'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const CartDrawer = lazy(() => import('./components/CartDrawer'));
+const ProductDetailModal = lazy(() => import('./components/ProductDetailModal'));
+const CheckoutModal = lazy(() => import('./components/CheckoutModal'));
+const SearchModal = lazy(() => import('./components/SearchModal'));
+const DoshaQuizModal = lazy(() => import('./components/DoshaQuizModal'));
+const AuthModal = lazy(() => import('./components/AuthModal'));
 
 import { AuthProvider } from './context/AuthContext';
 import { CustomerRoute, AdminRoute } from './components/ProtectedRoute';
 
-import CartDrawer from './components/CartDrawer';
-import ProductDetailModal from './components/ProductDetailModal';
-import CheckoutModal from './components/CheckoutModal';
-import SearchModal from './components/SearchModal';
-import DoshaQuizModal from './components/DoshaQuizModal';
-import AuthModal from './components/AuthModal';
 import { Sparkles, CalendarCheck } from 'lucide-react';
 
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const onlinePaymentsEnabled = false;
 
   // Persist cart items in localStorage
   const [cart, setCart] = useState(() => {
@@ -44,10 +45,35 @@ function AppContent() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutData, setCheckoutData] = useState(null);
+  const [checkoutItems, setCheckoutItems] = useState(null);
+  const [isBuyNowCheckout, setIsBuyNowCheckout] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDoshaQuizOpen, setIsDoshaQuizOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [loadedModals, setLoadedModals] = useState({});
   const [toast, setToast] = useState(null);
+
+  const loadModal = (name) => setLoadedModals((loaded) => ({ ...loaded, [name]: true }));
+  const handleSelectProduct = (product) => {
+    loadModal('product');
+    setSelectedProduct(product);
+  };
+  const handleOpenCart = () => {
+    loadModal('cart');
+    setIsCartOpen(true);
+  };
+  const handleOpenSearch = () => {
+    loadModal('search');
+    setIsSearchOpen(true);
+  };
+  const handleOpenDoshaQuiz = () => {
+    loadModal('quiz');
+    setIsDoshaQuizOpen(true);
+  };
+  const handleOpenAuth = () => {
+    loadModal('auth');
+    setIsAuthModalOpen(true);
+  };
 
   // Sync cart to localStorage whenever it changes
   useEffect(() => {
@@ -92,15 +118,24 @@ function AppContent() {
   };
 
   const handleProceedToCheckout = (data) => {
+    loadModal('checkout');
+    setCheckoutItems(cart);
+    setIsBuyNowCheckout(false);
     setCheckoutData(data);
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
 
   const handleBuyNow = (product, qty = 1) => {
-    handleAddToCart(product, qty);
+    if (!onlinePaymentsEnabled) {
+      showToast('Online payment setup is required before checkout is available.');
+      return;
+    }
+    loadModal('checkout');
+    setCheckoutItems([{ product, quantity: qty }]);
+    setIsBuyNowCheckout(true);
     const subtotal = product.price * qty;
-    const shippingCost = subtotal >= 499 ? 0 : 50;
+    const shippingCost = subtotal >= 499 ? 0 : 70;
     const finalTotal = subtotal + shippingCost;
     setCheckoutData({ subtotal, discountAmount: 0, shippingCost, finalTotal });
     setSelectedProduct(null);
@@ -108,11 +143,15 @@ function AppContent() {
   };
 
   const handleOrderCompleted = (orderId) => {
-    setCart([]);
+    if (!isBuyNowCheckout) {
+      setCart([]);
+      try {
+        localStorage.removeItem('vagvat_cart');
+      } catch {}
+    }
     setCheckoutData(null);
-    try {
-      localStorage.removeItem('vagvat_cart');
-    } catch {}
+    setCheckoutItems(null);
+    setIsBuyNowCheckout(false);
     showToast(`Order #${orderId} confirmed successfully!`);
   };
 
@@ -134,22 +173,23 @@ function AppContent() {
       {!isAdminRoute && (
         <Navbar
           cartCount={totalCartCount}
-          onOpenCart={() => setIsCartOpen(true)}
-          onOpenSearch={() => setIsSearchOpen(true)}
-          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onOpenCart={handleOpenCart}
+          onOpenSearch={handleOpenSearch}
+          onOpenAuth={handleOpenAuth}
         />
       )}
 
       {/* Multi-Page Routes */}
       <main className="flex-1 flex flex-col min-w-0">
+        <Suspense fallback={<div className="flex-1 min-h-[50vh]" aria-label="Loading page" />}>
         <Routes>
           <Route
             path="/"
             element={
               <HomePage
-                onSelectProduct={(p) => setSelectedProduct(p)}
+                onSelectProduct={handleSelectProduct}
                 onAddToCart={handleAddToCart}
-                onOpenDoshaQuiz={() => setIsDoshaQuizOpen(true)}
+                onOpenDoshaQuiz={handleOpenDoshaQuiz}
               />
             }
           />
@@ -158,7 +198,7 @@ function AppContent() {
             path="/shop"
             element={
               <ShopPage
-                onSelectProduct={(p) => setSelectedProduct(p)}
+                onSelectProduct={handleSelectProduct}
                 onAddToCart={handleAddToCart}
               />
             }
@@ -221,59 +261,63 @@ function AppContent() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </main>
 
       {/* Global Footer with All Links (Hidden on Admin Portal) */}
       {!isAdminRoute && <Footer />}
 
       {/* Shopping Cart Drawer */}
-      <CartDrawer
+      {loadedModals.cart && <Suspense fallback={null}><CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
-        cartItems={cart}
+        cartItems={checkoutItems || cart}
+        checkoutAvailable={onlinePaymentsEnabled}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveFromCart}
         onProceedToCheckout={handleProceedToCheckout}
-      />
+      /></Suspense>}
 
       {/* Product Detail Modal */}
-      <ProductDetailModal
+      {loadedModals.product && <Suspense fallback={null}><ProductDetailModal
         product={selectedProduct}
         isOpen={!!selectedProduct}
+        checkoutAvailable={onlinePaymentsEnabled}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
-      />
+      /></Suspense>}
 
       {/* Checkout Modal */}
-      <CheckoutModal
+      {loadedModals.checkout && <Suspense fallback={null}><CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
+        paymentGatewayConfigured={onlinePaymentsEnabled}
         cartItems={cart}
         checkoutData={checkoutData}
         onOrderCompleted={handleOrderCompleted}
-      />
+      /></Suspense>}
 
       {/* Search Modal */}
-      <SearchModal
+      {loadedModals.search && <Suspense fallback={null}><SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        onSelectProduct={(p) => setSelectedProduct(p)}
-      />
+        onSelectProduct={handleSelectProduct}
+      /></Suspense>}
 
       {/* Dosha Quiz Guide Modal */}
-      <DoshaQuizModal
+      {loadedModals.quiz && <Suspense fallback={null}><DoshaQuizModal
         isOpen={isDoshaQuizOpen}
         onClose={() => setIsDoshaQuizOpen(false)}
-        onSelectProduct={(p) => setSelectedProduct(p)}
-      />
+        onSelectProduct={handleSelectProduct}
+      /></Suspense>}
 
       {/* Customer / Admin Auth Modal */}
-      <AuthModal
+      {loadedModals.auth && <Suspense fallback={null}><AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={() => {}}
-      />
+      /></Suspense>}
 
       {/* Notification Toast */}
       {toast && (

@@ -239,7 +239,7 @@ export default function Footer() {
 
           {/* Center: Copyright */}
           <p className="text-xs text-[#DCE5D5]/65">
-            © 2025 Vagvat Ayurveda. All rights reserved.
+            © {currentYear} Vagvat Ayurveda. All rights reserved.
           </p>
 
           {/* Right: Crafted with heart */}

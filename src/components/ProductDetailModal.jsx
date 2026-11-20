@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Star, ShoppingBag, Plus, Minus, Check, ShieldCheck, Leaf, Sparkles, Heart } from 'lucide-react';
 import ProductVisual from './ProductVisual';
 
-export default function ProductDetailModal({ product, isOpen, onClose, onAddToCart, onBuyNow }) {
+export default function ProductDetailModal({ product, isOpen, checkoutAvailable, onClose, onAddToCart, onBuyNow }) {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('benefits');
   const [added, setAdded] = useState(false);
@@ -271,9 +271,10 @@ export default function ProductDetailModal({ product, isOpen, onClose, onAddToCa
                     {/* Buy Now Direct */}
                     <button
                       onClick={handleBuyNow}
-                      className="w-full sm:w-auto py-3 px-5 rounded-lg bg-[#173D2B] hover:bg-[#102C20] text-[#F7F0DF] font-bold text-xs tracking-wider uppercase transition-colors shrink-0 shadow cursor-pointer text-center"
+                      disabled={!checkoutAvailable}
+                      className="w-full sm:w-auto py-3 px-5 rounded-lg bg-[#173D2B] hover:bg-[#102C20] disabled:opacity-60 disabled:cursor-not-allowed text-[#F7F0DF] font-bold text-xs tracking-wider uppercase transition-colors shrink-0 shadow cursor-pointer text-center"
                     >
-                      Buy Now
+                      {checkoutAvailable ? 'Buy Now' : 'Online Payment Setup Required'}
                     </button>
                   </div>
 

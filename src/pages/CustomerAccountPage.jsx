@@ -74,8 +74,8 @@ export default function CustomerAccountPage() {
                 shippingAddress: data.shippingAddress || '',
                 date: data.date || (data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent'),
                 total: Number(data.total) || 0,
-                paymentMethod: data.paymentMethod || 'Online Payment (Razorpay)',
-                paymentStatus: data.paymentStatus || 'Paid',
+                paymentMethod: data.paymentMethod || 'Not recorded',
+                paymentStatus: data.paymentStatus || 'Unverified',
                 status: data.status === 'Delivered' ? 'Delivered' : 'Ordered',
                 items: data.items || [],
                 createdAt: data.createdAt || null

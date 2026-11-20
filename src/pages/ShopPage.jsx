@@ -63,7 +63,7 @@ export default function ShopPage({ onSelectProduct, onAddToCart }) {
           <div className="w-24 h-1 bg-[#C9A45C] mx-auto mt-4" />
 
           <p className="mt-4 text-sm sm:text-base text-[#4A5B4D] font-light leading-relaxed">
-            Discover our complete dispensary of 11 authentic classical formulations. 
+            Discover our complete dispensary of {PRODUCTS.length} authentic classical formulations.
             Crafted with genuine Swarna Bhasma, purified Himalayan Shilajit, and wildcrafted botanicals.
           </p>
         </div>

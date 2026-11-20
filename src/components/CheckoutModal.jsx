@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted }) {
+export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted, paymentGatewayConfigured }) {
   const { currentUser } = useAuth();
   const [step, setStep] = useState(1); // 1: Address, 2: Shipping & Payment, 3: Success
   const [formData, setFormData] = useState({
@@ -46,10 +46,10 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
     }
   }, [isOpen, currentUser]);
 
-  const subtotal = checkoutData?.subtotal || cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
-  const discountAmount = checkoutData?.discountAmount || 0;
-  const shippingCost = checkoutData?.shippingCost || (subtotal >= 499 ? 0 : 50);
-  const finalTotal = checkoutData?.finalTotal || (subtotal - discountAmount + shippingCost);
+  const subtotal = checkoutData?.subtotal ?? cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
+  const discountAmount = checkoutData?.discountAmount ?? 0;
+  const shippingCost = checkoutData?.shippingCost ?? (subtotal >= 499 ? 0 : 70);
+  const finalTotal = checkoutData?.finalTotal ?? (subtotal - discountAmount + shippingCost);
 
   // Field validation rules
   const validate = (values) => {
@@ -110,6 +110,9 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
 
   const finalizeOrder = async (generatedId, dateStr, timeStr, paymentId = null) => {
     try {
+      if (!paymentId) {
+        throw new Error('Verified online payment is required before placing an order.');
+      }
       const nowIso = new Date().toISOString();
       const orderData = {
         orderId: generatedId,
@@ -131,7 +134,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         shippingCost: Number(shippingCost),
         paymentMethod: 'Online Payment',
         paymentStatus: 'Pending',
-        paymentId: paymentId || `pay_${Math.random().toString(36).substring(2, 12)}`,
+        paymentId,
         status: 'Ordered',
         userId: currentUser?.uid || null,
         createdAt: nowIso,
@@ -203,6 +206,11 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
 
       // Prevent duplicate submissions from repeated clicks
       if (isProcessing) return;
+
+      if (!paymentGatewayConfigured) {
+        setCheckoutError('Online payment is not set up yet, so your order was not placed. Please try again later.');
+        return;
+      }
 
       setIsProcessing(true);
       setCheckoutError('');
@@ -523,7 +531,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   </div>
                 )}
 
-                {/* Exclusive Online Payment Option via Razorpay */}
+                {/* Online payment is disabled until a verified gateway is configured. */}
                 <div className="space-y-3">
                   <div className="p-5 rounded-2xl bg-[#DCE5D5]/40 border-2 border-[#173D2B] shadow-sm space-y-3">
                     <div className="flex items-start justify-between">
@@ -533,30 +541,21 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                         </div>
                         <div>
                           <span className="font-serif font-bold text-sm text-[#173D2B] block">
-                            Online Payment (Razorpay)
+                            Online Payment
                           </span>
                           <span className="text-xs text-[#4A5B4D]">
-                            Pay securely with UPI, Cards, NetBanking or Wallets
+                            Checkout will open when secure online payments are configured.
                           </span>
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded-full uppercase shrink-0">
-                        100% Encrypted
+                        Setup Required
                       </span>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#C9A45C]/20 flex flex-wrap items-center gap-2 text-[11px] text-[#173D2B] font-semibold">
-                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Instant UPI</span>
-                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Google Pay</span>
-                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">PhonePe</span>
-                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Paytm</span>
-                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Debit / Credit Card</span>
-                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">NetBanking</span>
                     </div>
 
                     <div className="p-2.5 rounded-lg bg-emerald-50/80 border border-emerald-200/80 text-[11px] text-emerald-900 flex items-center space-x-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                      <span>Only secure online payments are accepted. Cash on delivery is unavailable to guarantee direct, authenticated dispensary dispatch.</span>
+                      <span>Online only. No order is accepted until payment processing is available.</span>
                     </div>
                   </div>
                 </div>
@@ -573,7 +572,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Payment Gateway</span>
-                    <span className="text-[#173D2B] font-bold text-emerald-800">Online Payment</span>
+                    <span className="text-[#173D2B] font-bold text-amber-800">Not available yet</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Shipping To</span>
@@ -588,12 +587,12 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                 {/* Confirm Pay Button */}
                 <button
                   type="submit"
-                  disabled={isProcessing}
+                  disabled={isProcessing || !paymentGatewayConfigured}
                   className="w-full py-3.5 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] disabled:opacity-50 text-[#102C20] font-bold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center justify-center space-x-2 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
                   <span>
-                    {isProcessing ? 'Placing Your Order...' : `PLACE ORDER • ₹${finalTotal}`}
+                    {isProcessing ? 'Processing...' : paymentGatewayConfigured ? `PAY & PLACE ORDER • ₹${finalTotal}` : 'ONLINE PAYMENT UNAVAILABLE'}
                   </span>
                 </button>
               </form>
@@ -629,8 +628,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                     <span>Estimated Delivery: Within 2 to 4 Business Days</span>
                   </div>
                   <p className="text-[#4A5B4D] text-[11px]">
-                    We have dispatched your order details and invoice to <strong className="text-[#173D2B]">{formData.email}</strong> and tracking link via SMS to <strong className="text-[#173D2B]">{formData.phone}</strong>.
-                    Our apothecary team will carefully hand-pack your fresh formulations with sacred care.
+                    Your order details are saved. Our apothecary team will contact you at <strong className="text-[#173D2B]">{formData.phone}</strong> with dispatch and tracking updates.
                   </p>
                 </div>
 

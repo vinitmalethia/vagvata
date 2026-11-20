@@ -140,8 +140,8 @@ export default function AdminDashboardPage() {
             shippingAddress: data.shippingAddress || '',
             date: data.date || (data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent'),
             total: Number(data.total) || 0,
-            paymentMethod: data.paymentMethod || 'Online Payment (Razorpay)',
-            paymentStatus: data.paymentStatus || 'Paid',
+            paymentMethod: data.paymentMethod || 'Not recorded',
+            paymentStatus: data.paymentStatus || 'Unverified',
             status: data.status === 'Delivered' ? 'Delivered' : 'Ordered',
             items: data.items || [],
             createdAt: data.createdAt || null
@@ -394,7 +394,8 @@ export default function AdminDashboardPage() {
   });
 
   // Computed Totals
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const paidOrders = orders.filter(o => o.paymentStatus === 'Paid');
+  const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
   const activeOrdersCount = orders.filter(o => o.status !== 'Delivered').length;
   const lowStockCount = inventory.filter(i => (i.stockCount || 0) < 20).length;
 
@@ -409,12 +410,12 @@ export default function AdminDashboardPage() {
         phone: o.customerPhone,
         address: o.shippingAddress,
         ordersCount: 1,
-        totalSpent: o.total || 0,
+        totalSpent: o.paymentStatus === 'Paid' ? (Number(o.total) || 0) : 0,
         lastOrder: o.date
       };
     } else {
       customerMap[key].ordersCount += 1;
-      customerMap[key].totalSpent += (o.total || 0);
+      if (o.paymentStatus === 'Paid') customerMap[key].totalSpent += Number(o.total) || 0;
     }
   });
   const customersList = Object.values(customerMap);
@@ -617,7 +618,7 @@ export default function AdminDashboardPage() {
                 <div className="bg-[#102C20] rounded-2xl p-4 sm:p-5 border border-[#C9A45C]/30 shadow">
                   <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block truncate">Total Revenue</span>
                   <div className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold text-white mt-1 truncate">₹{totalRevenue.toLocaleString()}</div>
-                  <span className="text-[9px] sm:text-[10px] text-emerald-400 mt-1 block truncate">✦ Confirmed orders</span>
+                  <span className="text-[9px] sm:text-[10px] text-emerald-400 mt-1 block truncate">✦ Verified payments</span>
                 </div>
 
                 <div className="bg-[#102C20] rounded-2xl p-4 sm:p-5 border border-[#C9A45C]/30 shadow">
@@ -702,8 +703,8 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="p-3 rounded-xl bg-black/20 border border-white/5 flex items-center justify-between">
-                      <span className="text-[#DCE5D5]/80">Razorpay / UPI Gateway</span>
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[10px]">HEALTHY</span>
+                      <span className="text-[#DCE5D5]/80">Online Payment Gateway</span>
+                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px]">NOT CONFIGURED</span>
                     </div>
 
                     <div className="p-3 rounded-xl bg-black/20 border border-white/5 flex items-center justify-between">
@@ -1500,7 +1501,7 @@ export default function AdminDashboardPage() {
                 <div className="bg-[#102C20] p-4 rounded-xl border border-[#C9A45C]/30">
                   <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Online Prepaid Revenue</span>
                   <span className="text-xl font-bold text-white block mt-1">₹{totalRevenue.toLocaleString()}</span>
-                  <span className="text-[10px] text-emerald-400">100% Online Payments (Razorpay)</span>
+                  <span className="text-[10px] text-amber-300">Gateway setup required</span>
                 </div>
                 <div className="bg-[#102C20] p-4 rounded-xl border border-[#C9A45C]/30">
                   <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Payment Mode</span>
@@ -1509,8 +1510,8 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="bg-[#102C20] p-4 rounded-xl border border-[#C9A45C]/30">
                   <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Gateway Integration</span>
-                  <span className="text-xl font-bold text-emerald-400 block mt-1">Razorpay Ready</span>
-                  <span className="text-[10px] text-[#DCE5D5]/70">256-Bit SSL Encrypted Checkout</span>
+                  <span className="text-xl font-bold text-amber-300 block mt-1">Not Configured</span>
+                  <span className="text-[10px] text-[#DCE5D5]/70">Orders stay disabled until setup</span>
                 </div>
               </div>
 
@@ -1534,7 +1535,7 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#C9A45C]/15">
-                      {orders.length === 0 ? (
+                      {paidOrders.length === 0 ? (
                         <tr>
                           <td colSpan="6" className="p-8 text-center text-white/50">
                             <CreditCard className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
@@ -1543,7 +1544,7 @@ export default function AdminDashboardPage() {
                           </td>
                         </tr>
                       ) : (
-                        orders.map((o) => (
+                        paidOrders.map((o) => (
                           <tr key={o.orderId} className="hover:bg-white/5">
                             <td className="p-4 font-mono text-[11px] text-[#DCE5D5]/70">TXN-{o.orderId.replace('VAGVAT-', '')}</td>
                             <td className="p-4 font-mono font-bold text-[#DFC282]">{o.orderId}</td>
@@ -1564,12 +1565,12 @@ export default function AdminDashboardPage() {
 
                 {/* 2. Mobile Transaction Cards (Shown on mobile screens < 768px) */}
                 <div className="md:hidden divide-y divide-[#C9A45C]/15">
-                  {orders.length === 0 ? (
+                  {paidOrders.length === 0 ? (
                     <div className="p-6 text-center text-xs text-white/50">
                       No payment transactions recorded yet.
                     </div>
                   ) : (
-                    orders.map((o) => (
+                    paidOrders.map((o) => (
                       <div key={o.orderId} className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs text-[#DCE5D5]/70">TXN-{o.orderId.replace('VAGVAT-', '')}</span>
@@ -1670,7 +1671,7 @@ export default function AdminDashboardPage() {
                 <div className="bg-[#102C20] p-5 rounded-2xl border border-[#C9A45C]/30">
                   <span className="text-xs text-[#DFC282] uppercase font-semibold">Average Order Value (AOV)</span>
                   <span className="text-2xl font-bold text-white block mt-1">
-                    ₹{orders.length > 0 ? (totalRevenue / orders.length).toFixed(0) : '0'}
+                    ₹{paidOrders.length > 0 ? (totalRevenue / paidOrders.length).toFixed(0) : '0'}
                   </span>
                   <span className="text-[10px] text-emerald-400 mt-1 block">Live storefront metric</span>
                 </div>
@@ -1702,7 +1703,7 @@ export default function AdminDashboardPage() {
                 <div className="p-6 rounded-2xl bg-[#102C20] border border-[#C9A45C]/30 space-y-4">
                   <h3 className="font-serif font-bold text-base text-white">Sales Distribution</h3>
                   <div className="text-xs text-[#DCE5D5]/80">
-                    Total {orders.length} order(s) processed for ₹{totalRevenue.toLocaleString()} total gross volume.
+                    {paidOrders.length} verified payment(s) recorded for ₹{totalRevenue.toLocaleString()}.
                   </div>
                 </div>
               )}
