@@ -140,7 +140,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
             shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
             date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
             total: finalTotal,
-            status: 'Processing',
+            status: 'Ordered',
             items: cartItems.map(item => ({
               name: item.product.name,
               quantity: item.quantity,

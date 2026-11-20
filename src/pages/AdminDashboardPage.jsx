@@ -97,7 +97,12 @@ export default function AdminDashboardPage() {
     try {
       const storedOrders = localStorage.getItem('vagvat_orders');
       if (storedOrders) {
-        setOrders(JSON.parse(storedOrders));
+        const parsed = JSON.parse(storedOrders);
+        const normalized = parsed.map(o => ({
+          ...o,
+          status: o.status === 'Delivered' ? 'Delivered' : 'Ordered'
+        }));
+        setOrders(normalized);
       } else {
         const initialOrders = [
           {
@@ -108,7 +113,7 @@ export default function AdminDashboardPage() {
             date: '19 Nov 2026',
             total: 4798,
             paymentMethod: 'UPI (PhonePe)',
-            status: 'Processing',
+            status: 'Ordered',
             shippingAddress: 'Plot 45, Sector 14, Gurugram, Haryana - 122001',
             items: [
               { name: 'Mall Yoddha (Swarna Bhasma)', quantity: 1, price: 3499, volume: 'Net Wt. 1 kg' },
@@ -123,7 +128,7 @@ export default function AdminDashboardPage() {
             date: '18 Nov 2026',
             total: 1899,
             paymentMethod: 'Credit Card',
-            status: 'Dispatched',
+            status: 'Ordered',
             shippingAddress: 'Flat 4B, Southern Avenue, Kolkata, West Bengal - 700029',
             items: [
               { name: 'Kumkumadi Tailam (24K Gold)', quantity: 1, price: 1899, volume: '30 ml' }
@@ -302,7 +307,8 @@ export default function AdminDashboardPage() {
       o.orderId.toLowerCase().includes(orderSearch.toLowerCase()) ||
       o.customerName.toLowerCase().includes(orderSearch.toLowerCase()) ||
       o.customerPhone.includes(orderSearch);
-    const matchesFilter = orderStatusFilter === 'All' || o.status === orderStatusFilter;
+    const orderStatus = o.status === 'Delivered' ? 'Delivered' : 'Ordered';
+    const matchesFilter = orderStatusFilter === 'All' || orderStatus === orderStatusFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -551,10 +557,9 @@ export default function AdminDashboardPage() {
                           <span className="font-bold text-[#F7F0DF] text-sm block">₹{order.total}</span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
                             order.status === 'Delivered' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' :
-                            order.status === 'Dispatched' ? 'bg-blue-950 text-blue-400 border border-blue-500/30' :
                             'bg-amber-950 text-amber-300 border border-amber-500/30'
                           }`}>
-                            {order.status}
+                            {order.status === 'Delivered' ? 'Delivered' : 'Ordered'}
                           </span>
                         </div>
                       </div>
@@ -821,7 +826,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="flex space-x-1.5 overflow-x-auto no-scrollbar">
-                  {['All', 'Processing', 'Dispatched', 'Delivered', 'Cancelled'].map((status) => (
+                  {['All', 'Ordered', 'Delivered'].map((status) => (
                     <button
                       key={status}
                       onClick={() => setOrderStatusFilter(status)}
@@ -877,25 +882,36 @@ export default function AdminDashboardPage() {
                             </td>
                             <td className="p-4 font-bold text-white">₹{order.total}</td>
                             <td className="p-4">
-                              <select
-                                value={order.status}
-                                onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
-                                className={`text-[11px] px-2 py-1 rounded font-semibold focus:outline-none ${
-                                  order.status === 'Delivered' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' :
-                                  order.status === 'Dispatched' ? 'bg-blue-950 text-blue-400 border border-blue-500/30' :
-                                  'bg-amber-950 text-amber-300 border border-amber-500/30'
-                                }`}
-                              >
-                                <option value="Processing">Processing</option>
-                                <option value="Dispatched">Dispatched</option>
-                                <option value="Delivered">Delivered</option>
-                                <option value="Cancelled">Cancelled</option>
-                              </select>
+                              <span className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                                order.status === 'Delivered'
+                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                                  : 'bg-amber-950 text-amber-300 border border-amber-500/30'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${order.status === 'Delivered' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                                <span>{order.status === 'Delivered' ? 'Delivered' : 'Ordered'}</span>
+                              </span>
                             </td>
-                            <td className="p-4 text-right">
+                            <td className="p-4 text-right space-x-2">
+                              {order.status !== 'Delivered' ? (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(order.orderId, 'Delivered')}
+                                  className="px-2.5 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold cursor-pointer transition-colors"
+                                  title="Mark as Delivered"
+                                >
+                                  Mark Delivered
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(order.orderId, 'Ordered')}
+                                  className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-[#DCE5D5]/60 text-[11px] cursor-pointer transition-colors"
+                                  title="Mark as Ordered"
+                                >
+                                  Mark Ordered
+                                </button>
+                              )}
                               <button
                                 onClick={() => setSelectedOrder(order)}
-                                className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-[#DFC282] text-xs font-semibold"
+                                className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-[#DFC282] text-xs font-semibold cursor-pointer"
                               >
                                 View
                               </button>
@@ -923,6 +939,30 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="space-y-3 text-xs">
+                      <div className="p-3 rounded-xl bg-black/30 flex items-center justify-between">
+                        <div>
+                          <span className="text-[#DFC282] font-semibold block">Current Status:</span>
+                          <span className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider mt-1 ${
+                            selectedOrder.status === 'Delivered'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-950 text-amber-300 border border-amber-500/30'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${selectedOrder.status === 'Delivered' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                            <span>{selectedOrder.status === 'Delivered' ? 'Delivered' : 'Ordered'}</span>
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newSt = selectedOrder.status === 'Delivered' ? 'Ordered' : 'Delivered';
+                            handleUpdateOrderStatus(selectedOrder.orderId, newSt);
+                            setSelectedOrder({ ...selectedOrder, status: newSt });
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#DFC282] text-xs font-semibold cursor-pointer transition-colors"
+                        >
+                          {selectedOrder.status === 'Delivered' ? 'Mark as Ordered' : 'Mark as Delivered'}
+                        </button>
+                      </div>
+
                       <div className="p-3 rounded-xl bg-black/30 space-y-1">
                         <span className="text-[#DFC282] font-semibold block">Shipping Address:</span>
                         <p className="text-white">{selectedOrder.shippingAddress}</p>
