@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
 import ProductVisual from './ProductVisual';
 
-export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailable, onUpdateQuantity, onRemoveItem, onProceedToCheckout }) {
+export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailable, testOrdersEnabled, onUpdateQuantity, onRemoveItem, onProceedToCheckout }) {
   const [promoCode, setPromoCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
   const [promoError, setPromoError] = useState('');
@@ -244,14 +244,14 @@ export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailab
                   disabled={!checkoutAvailable}
                   className="w-full py-3.5 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] disabled:opacity-60 disabled:cursor-not-allowed text-[#102C20] font-bold text-xs tracking-wider uppercase transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-[#C9A45C]/30 cursor-pointer"
                 >
-                  <span>{checkoutAvailable ? `PROCEED TO CHECKOUT • ₹${finalTotal}` : 'ONLINE PAYMENT SETUP REQUIRED'}</span>
+                  <span>{testOrdersEnabled ? `PLACE TEST ORDER • ₹${finalTotal}` : checkoutAvailable ? `PROCEED TO CHECKOUT • ₹${finalTotal}` : 'ONLINE PAYMENT SETUP REQUIRED'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
-                {/* Assurance footer */}
+                {/* Payment status footer */}
                 <div className="flex items-center justify-center space-x-2 text-[10px] text-gray-500 pt-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Online payment setup is required before checkout is available.</span>
+                  <span>{testOrdersEnabled ? 'TEST MODE — no payment will be taken or order dispatched.' : 'Online payment setup is required before checkout is available.'}</span>
                 </div>
               </div>
             )}

@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted, paymentGatewayConfigured }) {
+export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted, paymentGatewayConfigured, testOrdersEnabled }) {
   const { currentUser } = useAuth();
   const [step, setStep] = useState(1); // 1: Address, 2: Shipping & Payment, 3: Success
   const [formData, setFormData] = useState({
@@ -23,6 +23,8 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
   const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [orderIsTest, setOrderIsTest] = useState(false);
+  const [orderSyncStatus, setOrderSyncStatus] = useState('unknown');
   const [placedDateTime, setPlacedDateTime] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
@@ -36,6 +38,8 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       setFormErrors({});
       setTouched({});
       setCheckoutError('');
+      setOrderIsTest(false);
+      setOrderSyncStatus('unknown');
       if (currentUser) {
         setFormData(prev => ({
           ...prev,
@@ -108,9 +112,12 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
     setFormErrors(validate(formData));
   };
 
-  const finalizeOrder = async (generatedId, dateStr, timeStr, paymentId = null) => {
+  const finalizeOrder = async (generatedId, dateStr, timeStr, { paymentId = null, testOrder = false } = {}) => {
     try {
-      if (!paymentId) {
+      if (testOrder && !testOrdersEnabled) {
+        throw new Error('Test orders are only available in local development.');
+      }
+      if (!testOrder && !paymentId) {
         throw new Error('Verified online payment is required before placing an order.');
       }
       const nowIso = new Date().toISOString();
@@ -132,9 +139,10 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         subtotal: Number(subtotal),
         discountAmount: Number(discountAmount),
         shippingCost: Number(shippingCost),
-        paymentMethod: 'Online Payment',
-        paymentStatus: 'Pending',
+        paymentMethod: testOrder ? 'Test Order (No Payment)' : 'Online Payment',
+        paymentStatus: testOrder ? 'Test' : 'Pending',
         paymentId,
+        isTestOrder: testOrder,
         status: 'Ordered',
         userId: currentUser?.uid || null,
         createdAt: nowIso,
@@ -146,7 +154,24 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         }))
       };
 
-      // 1. Immediately store in LocalStorage so order is instantly preserved & never lost
+      // 1. Try cloud sync so test orders can be checked across devices in the admin dashboard.
+      let cloudSynced = false;
+      if (db) {
+        try {
+          const firestoreWrite = setDoc(doc(db, 'orders', generatedId), {
+            ...orderData,
+            createdAt: serverTimestamp()
+          });
+          await Promise.race([
+            firestoreWrite.then(() => { cloudSynced = true; }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Cloud sync timed out')), 8000))
+          ]);
+        } catch (cloudErr) {
+          console.warn('Cloud Firestore sync notice:', cloudErr);
+        }
+      }
+
+      // 2. Save locally as a fallback for checking the order in this browser.
       try {
         const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
         localStorage.setItem('vagvat_orders', JSON.stringify([orderData, ...existing]));
@@ -154,24 +179,10 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         console.warn('LocalStorage save warning:', localErr);
       }
 
-      // 2. Synchronize to Firestore with a timeout so network delays/DNS issues never hang the checkout
-      if (db) {
-        try {
-          const firestoreWrite = setDoc(doc(db, 'orders', generatedId), {
-            ...orderData,
-            createdAt: serverTimestamp()
-          });
-
-          // Allow up to 2 seconds for cloud response; if network is slow/offline, proceed gracefully
-          const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
-          await Promise.race([firestoreWrite, timeoutPromise]);
-        } catch (cloudErr) {
-          console.warn('Cloud Firestore sync notice (order safely recorded):', cloudErr);
-        }
-      }
-
-      // 3. Mark order as confirmed and transition immediately to Step 3
+      // 3. Mark the test order or verified payment result and transition to confirmation.
       setOrderId(generatedId);
+      setOrderIsTest(testOrder);
+      setOrderSyncStatus(cloudSynced ? 'cloud' : 'local');
       setPlacedDateTime(`${dateStr} at ${timeStr}`);
       setIsProcessing(false);
       setStep(3);
@@ -220,9 +231,11 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
       const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-      // Directly finalize order without payment gateway
+      // In local development, allow an explicitly marked no-payment test order.
         try {
-          await finalizeOrder(generatedId, dateStr, timeStr);
+          await finalizeOrder(generatedId, dateStr, timeStr, {
+            testOrder: testOrdersEnabled && !paymentGatewayConfigured
+          });
         } catch (err) {
           console.error('Order finalization error:', err);
           setIsProcessing(false);
@@ -541,21 +554,21 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                         </div>
                         <div>
                           <span className="font-serif font-bold text-sm text-[#173D2B] block">
-                            Online Payment
+                            {testOrdersEnabled ? 'Test Order (No Payment)' : 'Online Payment'}
                           </span>
                           <span className="text-xs text-[#4A5B4D]">
-                            Checkout will open when secure online payments are configured.
+                            {testOrdersEnabled ? 'For local testing only. No payment will be taken.' : 'Checkout will open when secure online payments are configured.'}
                           </span>
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded-full uppercase shrink-0">
-                        Setup Required
+                        {testOrdersEnabled ? 'TEST MODE' : 'Setup Required'}
                       </span>
                     </div>
 
                     <div className="p-2.5 rounded-lg bg-emerald-50/80 border border-emerald-200/80 text-[11px] text-emerald-900 flex items-center space-x-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                      <span>Online only. No order is accepted until payment processing is available.</span>
+                      <span>{testOrdersEnabled ? 'Test orders are not paid or dispatched and are excluded from revenue reports.' : 'Online only. No order is accepted until payment processing is available.'}</span>
                     </div>
                   </div>
                 </div>
@@ -572,7 +585,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Payment Gateway</span>
-                    <span className="text-[#173D2B] font-bold text-amber-800">Not available yet</span>
+                    <span className="text-[#173D2B] font-bold text-amber-800">{testOrdersEnabled ? 'Test — no payment' : 'Not available yet'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Shipping To</span>
@@ -587,12 +600,12 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                 {/* Confirm Pay Button */}
                 <button
                   type="submit"
-                  disabled={isProcessing || !paymentGatewayConfigured}
+                  disabled={isProcessing || (!paymentGatewayConfigured && !testOrdersEnabled)}
                   className="w-full py-3.5 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] disabled:opacity-50 text-[#102C20] font-bold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center justify-center space-x-2 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
                   <span>
-                    {isProcessing ? 'Processing...' : paymentGatewayConfigured ? `PAY & PLACE ORDER • ₹${finalTotal}` : 'ONLINE PAYMENT UNAVAILABLE'}
+                    {isProcessing ? 'Processing...' : testOrdersEnabled ? `PLACE TEST ORDER • ₹${finalTotal}` : paymentGatewayConfigured ? `PAY & PLACE ORDER • ₹${finalTotal}` : 'ONLINE PAYMENT UNAVAILABLE'}
                   </span>
                 </button>
               </form>
@@ -610,7 +623,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                     • Thank You For Your Trust •
                   </span>
                   <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#173D2B] mt-1">
-                    Your Sacred Order is Confirmed
+                    {orderIsTest ? 'Test Order Recorded' : 'Your Sacred Order is Confirmed'}
                   </h3>
                   <p className="text-xs text-[#4A5B4D] mt-2">
                     Order Reference ID: <strong className="text-[#173D2B] font-mono">{orderId}</strong>
@@ -628,7 +641,9 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                     <span>Estimated Delivery: Within 2 to 4 Business Days</span>
                   </div>
                   <p className="text-[#4A5B4D] text-[11px]">
-                    Your order details are saved. Our apothecary team will contact you at <strong className="text-[#173D2B]">{formData.phone}</strong> with dispatch and tracking updates.
+                    {orderIsTest
+                      ? `This test order was saved ${orderSyncStatus === 'cloud' ? 'to the shared database' : 'in this browser only'}. No payment was taken and it will not be dispatched.`
+                      : <>Your order details are saved. Our apothecary team will contact you at <strong className="text-[#173D2B]">{formData.phone}</strong> with dispatch and tracking updates.</>}
                   </p>
                 </div>
 

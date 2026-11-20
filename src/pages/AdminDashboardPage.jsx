@@ -142,6 +142,7 @@ export default function AdminDashboardPage() {
             total: Number(data.total) || 0,
             paymentMethod: data.paymentMethod || 'Not recorded',
             paymentStatus: data.paymentStatus || 'Unverified',
+            isTestOrder: data.isTestOrder === true,
             status: data.status === 'Delivered' ? 'Delivered' : 'Ordered',
             items: data.items || [],
             createdAt: data.createdAt || null
@@ -155,14 +156,28 @@ export default function AdminDashboardPage() {
           return timeB - timeA;
         });
 
-        setOrders(liveOrders);
+        let combinedOrders = liveOrders;
+        try {
+          const localOrders = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
+          const localOnlyTestOrders = localOrders.filter(order =>
+            order.isTestOrder && !liveOrders.some(liveOrder => liveOrder.orderId === order.orderId)
+          );
+          combinedOrders = [...liveOrders, ...localOnlyTestOrders];
+          combinedOrders.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+            const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+            return timeB - timeA;
+          });
+        } catch {}
+
+        setOrders(combinedOrders);
         setOrdersLoading(false);
         setOrdersError(null);
         setIsLiveSyncing(true);
 
         // Keep local cache updated for offline resilience
         try {
-          localStorage.setItem('vagvat_orders', JSON.stringify(liveOrders));
+          localStorage.setItem('vagvat_orders', JSON.stringify(combinedOrders));
         } catch {}
       },
       (error) => {
@@ -671,6 +686,7 @@ export default function AdminDashboardPage() {
                         <div key={order.orderId} className="py-3 flex items-center justify-between text-xs">
                           <div>
                             <span className="font-mono font-bold text-[#DFC282]">{order.orderId}</span>
+                            {order.isTestOrder && <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 font-bold">TEST</span>}
                             <span className="text-white block font-medium">{order.customerName}</span>
                             <span className="text-[10px] text-[#DCE5D5]/60">{order.date} • {order.items.length} item(s)</span>
                           </div>
@@ -1041,7 +1057,10 @@ export default function AdminDashboardPage() {
                       ) : (
                         filteredOrders.map((order) => (
                           <tr key={order.orderId} className="hover:bg-white/5 transition-colors">
-                            <td className="p-4 font-mono font-bold text-[#DFC282]">{order.orderId}</td>
+                            <td className="p-4 font-mono font-bold text-[#DFC282]">
+                              {order.orderId}
+                              {order.isTestOrder && <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">TEST</span>}
+                            </td>
                             <td className="p-4">
                               <span className="font-bold text-white block">{order.customerName}</span>
                               <span className="text-[10px] text-[#DCE5D5]/60 block">{order.customerPhone}</span>
@@ -1107,7 +1126,10 @@ export default function AdminDashboardPage() {
                     filteredOrders.map((order) => (
                       <div key={order.orderId} className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono font-bold text-sm text-[#DFC282]">{order.orderId}</span>
+                          <span className="font-mono font-bold text-sm text-[#DFC282]">
+                            {order.orderId}
+                            {order.isTestOrder && <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">TEST</span>}
+                          </span>
                           <span className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             order.status === 'Delivered'
                               ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'

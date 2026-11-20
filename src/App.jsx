@@ -30,6 +30,8 @@ function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const onlinePaymentsEnabled = false;
+  const testOrdersEnabled = import.meta.env.DEV;
+  const checkoutAvailable = onlinePaymentsEnabled || testOrdersEnabled;
 
   // Persist cart items in localStorage
   const [cart, setCart] = useState(() => {
@@ -127,7 +129,7 @@ function AppContent() {
   };
 
   const handleBuyNow = (product, qty = 1) => {
-    if (!onlinePaymentsEnabled) {
+    if (!checkoutAvailable) {
       showToast('Online payment setup is required before checkout is available.');
       return;
     }
@@ -272,7 +274,8 @@ function AppContent() {
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cartItems={checkoutItems || cart}
-        checkoutAvailable={onlinePaymentsEnabled}
+        checkoutAvailable={checkoutAvailable}
+        testOrdersEnabled={testOrdersEnabled}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveFromCart}
         onProceedToCheckout={handleProceedToCheckout}
@@ -282,7 +285,8 @@ function AppContent() {
       {loadedModals.product && <Suspense fallback={null}><ProductDetailModal
         product={selectedProduct}
         isOpen={!!selectedProduct}
-        checkoutAvailable={onlinePaymentsEnabled}
+        checkoutAvailable={checkoutAvailable}
+        testOrdersEnabled={testOrdersEnabled}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
@@ -293,6 +297,7 @@ function AppContent() {
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         paymentGatewayConfigured={onlinePaymentsEnabled}
+        testOrdersEnabled={testOrdersEnabled}
         cartItems={cart}
         checkoutData={checkoutData}
         onOrderCompleted={handleOrderCompleted}
