@@ -1124,19 +1124,19 @@ export default function AdminDashboardPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-[#102C20] p-4 rounded-xl border border-[#C9A45C]/30">
-                  <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Online Prepaid (UPI / Cards)</span>
-                  <span className="text-xl font-bold text-white block mt-1">₹{(totalRevenue * 0.85).toFixed(0)}</span>
-                  <span className="text-[10px] text-emerald-400">100% Settled via Razorpay</span>
+                  <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Online Prepaid Revenue</span>
+                  <span className="text-xl font-bold text-white block mt-1">₹{totalRevenue.toLocaleString()}</span>
+                  <span className="text-[10px] text-emerald-400">100% Online Payments (Razorpay)</span>
                 </div>
                 <div className="bg-[#102C20] p-4 rounded-xl border border-[#C9A45C]/30">
-                  <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Cash on Delivery (COD)</span>
-                  <span className="text-xl font-bold text-white block mt-1">₹{(totalRevenue * 0.15).toFixed(0)}</span>
-                  <span className="text-[10px] text-amber-300">Collected on doorstep dispatch</span>
+                  <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Payment Mode</span>
+                  <span className="text-xl font-bold text-white block mt-1">Prepaid Online Only</span>
+                  <span className="text-[10px] text-[#DFC282]">Cash on Delivery is Disabled</span>
                 </div>
                 <div className="bg-[#102C20] p-4 rounded-xl border border-[#C9A45C]/30">
-                  <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Payment Gateway Status</span>
-                  <span className="text-xl font-bold text-emerald-400 block mt-1">Connected</span>
-                  <span className="text-[10px] text-[#DCE5D5]/70">256-Bit Encrypted Webhooks</span>
+                  <span className="text-[10px] uppercase text-[#DFC282] font-semibold">Gateway Integration</span>
+                  <span className="text-xl font-bold text-emerald-400 block mt-1">Razorpay Ready</span>
+                  <span className="text-[10px] text-[#DCE5D5]/70">256-Bit SSL Encrypted Checkout</span>
                 </div>
               </div>
 
@@ -1163,7 +1163,7 @@ export default function AdminDashboardPage() {
                           <td colSpan="6" className="p-8 text-center text-white/50">
                             <CreditCard className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
                             <p className="text-white font-semibold">No payment transactions recorded yet</p>
-                            <span className="text-[#DCE5D5]/60 text-[11px]">Captured Razorpay, UPI, and COD payments will automatically be logged here.</span>
+                            <span className="text-[#DCE5D5]/60 text-[11px]">Captured Razorpay online payments will automatically be logged here.</span>
                           </td>
                         </tr>
                       ) : (
@@ -1172,7 +1172,7 @@ export default function AdminDashboardPage() {
                             <td className="p-4 font-mono text-[11px] text-[#DCE5D5]/70">TXN-{o.orderId.replace('VAGVAT-', '')}</td>
                             <td className="p-4 font-mono font-bold text-[#DFC282]">{o.orderId}</td>
                             <td className="p-4 text-white font-medium">{o.customerName}</td>
-                            <td className="p-4 text-[#DCE5D5]/80">{o.paymentMethod || 'Instant UPI'}</td>
+                            <td className="p-4 text-[#DCE5D5]/80">{o.paymentMethod || 'Online Payment (Razorpay)'}</td>
                             <td className="p-4 font-bold text-white">₹{o.total}</td>
                             <td className="p-4">
                               <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-400">

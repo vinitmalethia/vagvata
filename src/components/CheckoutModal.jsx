@@ -15,7 +15,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
     city: '',
     state: '',
     pincode: '',
-    paymentMethod: 'upi', // upi, card, cod, netbanking
+    paymentMethod: 'online', // Exclusive Online Payment via Razorpay
   });
   const [formErrors, setFormErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -140,6 +140,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
             shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
             date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
             total: finalTotal,
+            paymentMethod: 'Online Payment (Razorpay)',
             status: 'Ordered',
             items: cartItems.map(item => ({
               name: item.product.name,
@@ -437,7 +438,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
               <form onSubmit={handleNextStep} className="p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h4 className="font-serif text-base font-bold text-[#173D2B]">
-                    2. Select Secure Payment Method
+                    2. Secure Online Payment (Razorpay)
                   </h4>
                   <button
                     type="button"
@@ -449,64 +450,42 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   </button>
                 </div>
 
-                {/* Payment Options (Razorpay Style) */}
+                {/* Exclusive Online Payment Option via Razorpay */}
                 <div className="space-y-3">
-                  {/* UPI Option */}
-                  <label className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${formData.paymentMethod === 'upi' ? 'bg-[#DCE5D5]/40 border-[#173D2B] ring-1 ring-[#173D2B]' : 'bg-white border-gray-200'}`}>
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="upi"
-                        checked={formData.paymentMethod === 'upi'}
-                        onChange={handleChange}
-                        className="text-[#173D2B] focus:ring-[#C9A45C]"
-                      />
-                      <div>
-                        <span className="font-bold text-sm text-[#173D2B] block">Instant UPI / QR Code (Razorpay)</span>
-                        <span className="text-xs text-[#4A5B4D]">Google Pay, PhonePe, Paytm, BHIM or any UPI App</span>
+                  <div className="p-5 rounded-2xl bg-[#DCE5D5]/40 border-2 border-[#173D2B] shadow-sm space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#173D2B] text-white flex items-center justify-center shrink-0 shadow">
+                          <Lock className="w-5 h-5 text-[#C9A45C]" />
+                        </div>
+                        <div>
+                          <span className="font-serif font-bold text-sm text-[#173D2B] block">
+                            Online Payment (Razorpay)
+                          </span>
+                          <span className="text-xs text-[#4A5B4D]">
+                            Pay securely with UPI, Cards, NetBanking or Wallets
+                          </span>
+                        </div>
                       </div>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded-full uppercase shrink-0">
+                        100% Encrypted
+                      </span>
                     </div>
-                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">Recommended</span>
-                  </label>
 
-                  {/* Cards Option */}
-                  <label className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'bg-[#DCE5D5]/40 border-[#173D2B] ring-1 ring-[#173D2B]' : 'bg-white border-gray-200'}`}>
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="card"
-                        checked={formData.paymentMethod === 'card'}
-                        onChange={handleChange}
-                        className="text-[#173D2B] focus:ring-[#C9A45C]"
-                      />
-                      <div>
-                        <span className="font-bold text-sm text-[#173D2B] block">Credit / Debit Card</span>
-                        <span className="text-xs text-[#4A5B4D]">Visa, MasterCard, RuPay, American Express</span>
-                      </div>
+                    <div className="pt-2 border-t border-[#C9A45C]/20 flex flex-wrap items-center gap-2 text-[11px] text-[#173D2B] font-semibold">
+                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Instant UPI</span>
+                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Google Pay</span>
+                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">PhonePe</span>
+                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Paytm</span>
+                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">Debit / Credit Card</span>
+                      <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 shadow-xs">NetBanking</span>
                     </div>
-                    <CreditCard className="w-5 h-5 text-gray-400" />
-                  </label>
 
-                  {/* Cash on Delivery Option */}
-                  <label className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${formData.paymentMethod === 'cod' ? 'bg-[#DCE5D5]/40 border-[#173D2B] ring-1 ring-[#173D2B]' : 'bg-white border-gray-200'}`}>
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cod"
-                        checked={formData.paymentMethod === 'cod'}
-                        onChange={handleChange}
-                        className="text-[#173D2B] focus:ring-[#C9A45C]"
-                      />
-                      <div>
-                        <span className="font-bold text-sm text-[#173D2B] block">Cash on Delivery (COD)</span>
-                        <span className="text-xs text-[#4A5B4D]">Pay with cash or UPI at the time of doorstep delivery</span>
-                      </div>
+                    <div className="p-2.5 rounded-lg bg-emerald-50/80 border border-emerald-200/80 text-[11px] text-emerald-900 flex items-center space-x-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                      <span>Only secure online payments are accepted. Cash on delivery is unavailable to guarantee direct, authenticated dispensary dispatch.</span>
                     </div>
-                    <Truck className="w-5 h-5 text-gray-400" />
-                  </label>
+                  </div>
                 </div>
 
                 {/* Final Order Amount Summary */}
@@ -518,6 +497,10 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Email Confirmation</span>
                     <span className="text-[#173D2B] font-medium">{formData.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#4A5B4D]">Payment Gateway</span>
+                    <span className="text-[#173D2B] font-bold text-emerald-800">Online Payment via Razorpay</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Shipping To</span>
@@ -537,7 +520,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                 >
                   <Lock className="w-4 h-4" />
                   <span>
-                    {isProcessing ? 'Verifying with Razorpay...' : `COMPLETE ORDER • ₹${finalTotal}`}
+                    {isProcessing ? 'Connecting to Razorpay...' : `PROCEED TO PAY ONLINE • ₹${finalTotal}`}
                   </span>
                 </button>
               </form>
