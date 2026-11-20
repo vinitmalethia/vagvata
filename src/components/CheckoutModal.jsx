@@ -23,6 +23,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
   const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [placedDateTime, setPlacedDateTime] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
 
@@ -107,6 +108,70 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
     setFormErrors(validate(formData));
   };
 
+  const finalizeOrder = async (generatedId, dateStr, timeStr, paymentId = null) => {
+    try {
+      const orderData = {
+        orderId: generatedId,
+        customerName: formData.fullName.trim(),
+        customerEmail: formData.email.trim(),
+        customerPhone: formData.phone.trim(),
+        shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
+        addressDetails: {
+          street: formData.address.trim(),
+          city: formData.city.trim(),
+          pincode: formData.pincode.trim()
+        },
+        date: dateStr,
+        time: timeStr,
+        dateTime: `${dateStr} • ${timeStr}`,
+        total: Number(finalTotal),
+        subtotal: Number(subtotal),
+        discountAmount: Number(discountAmount),
+        shippingCost: Number(shippingCost),
+        paymentMethod: 'Online Payment (Razorpay)',
+        paymentStatus: 'Paid',
+        paymentId: paymentId || `pay_${Math.random().toString(36).substring(2, 12)}`,
+        status: 'Ordered',
+        userId: currentUser?.uid || null,
+        createdAt: serverTimestamp(),
+        items: cartItems.map(item => ({
+          name: item.product.name,
+          quantity: item.quantity,
+          price: Number(item.product.price),
+          volume: item.product.volume || item.product.strength || ''
+        }))
+      };
+
+      // 1. Central database write to Cloud Firestore
+      if (!db) {
+        throw new Error('Database service is not ready. Please check your internet connection.');
+      }
+
+      await setDoc(doc(db, 'orders', generatedId), orderData);
+
+      // 2. Also keep local storage updated as offline cache
+      try {
+        const localOrder = {
+          ...orderData,
+          createdAt: new Date().toISOString()
+        };
+        const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
+        localStorage.setItem('vagvat_orders', JSON.stringify([localOrder, ...existing]));
+      } catch {}
+
+      setOrderId(generatedId);
+      setPlacedDateTime(`${dateStr} at ${timeStr}`);
+      setIsProcessing(false);
+      setStep(3);
+
+      if (onOrderCompleted) onOrderCompleted(generatedId);
+    } catch (err) {
+      console.error('Failed to save order to Firestore:', err);
+      setIsProcessing(false);
+      setCheckoutError(err.message || 'Unable to place order. Please check your network connection.');
+    }
+  };
+
   const handleNextStep = async (e) => {
     e.preventDefault();
     if (step === 1) {
@@ -133,72 +198,39 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       setIsProcessing(true);
       setCheckoutError('');
 
-      try {
-        const generatedId = `VAGVAT-${Math.floor(100000 + Math.random() * 900000)}`;
+      const generatedId = `VAGVAT-${Math.floor(100000 + Math.random() * 900000)}`;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-        const orderData = {
-          orderId: generatedId,
-          customerName: formData.fullName.trim(),
-          customerEmail: formData.email.trim(),
-          customerPhone: formData.phone.trim(),
-          shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
-          addressDetails: {
-            street: formData.address.trim(),
-            city: formData.city.trim(),
-            pincode: formData.pincode.trim()
-          },
-          date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-          total: Number(finalTotal),
-          subtotal: Number(subtotal),
-          discountAmount: Number(discountAmount),
-          shippingCost: Number(shippingCost),
-          paymentMethod: 'Online Payment (Razorpay)',
-          paymentStatus: 'Paid',
-          status: 'Ordered',
-          userId: currentUser?.uid || null,
-          createdAt: serverTimestamp(),
-          items: cartItems.map(item => ({
-            name: item.product.name,
-            quantity: item.quantity,
-            price: Number(item.product.price),
-            volume: item.product.volume || item.product.strength || ''
-          }))
-        };
-
-        // 1. Central database write to Cloud Firestore
-        if (!db) {
-          throw new Error('Database service is not ready. Please check your internet connection.');
-        }
-
-        await setDoc(doc(db, 'orders', generatedId), orderData);
-
-        // 2. Also keep local storage updated as offline cache
+      // Directly finalize order without payment gateway
         try {
-          const localOrder = {
-            ...orderData,
-            createdAt: new Date().toISOString()
-          };
-          const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
-          localStorage.setItem('vagvat_orders', JSON.stringify([localOrder, ...existing]));
-        } catch {}
-
-        setOrderId(generatedId);
-        setIsProcessing(false);
-        setStep(3);
-
-        if (onOrderCompleted) onOrderCompleted(generatedId);
-      } catch (err) {
-        console.error('Failed to save order to Firestore:', err);
-        setIsProcessing(false);
-        setCheckoutError(err.message || 'Unable to place order. Please check your network connection.');
-      }
+          await finalizeOrder(generatedId, dateStr, timeStr);
+        } catch (err) {
+          console.error('Order finalization error:', err);
+          setIsProcessing(false);
+          setCheckoutError(err.message || 'Unable to place order. Please try again.');
+        }
     }
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-lg text-center">
+              <p className="text-lg font-semibold">Connecting to Razorpay…</p>
+            </div>
+          </div>
+        ) &&
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          {isProcessing && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+              <div className="bg-white p-4 rounded shadow-lg text-center">
+                <p className="text-lg font-semibold">Connecting to Razorpay…</p>
+              </div>
+            </div>
+          )}
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -588,6 +620,11 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   <p className="text-xs text-[#4A5B4D] mt-2">
                     Order Reference ID: <strong className="text-[#173D2B] font-mono">{orderId}</strong>
                   </p>
+                  {placedDateTime && (
+                    <p className="text-[11px] text-[#79583B] mt-1 font-mono">
+                      Order Placed: <strong>{placedDateTime}</strong>
+                    </p>
+                  )}
                 </div>
 
                 <div className="p-4 rounded-xl bg-white border border-[#C9A45C]/30 text-xs text-left space-y-2 max-w-md mx-auto">
