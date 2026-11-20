@@ -67,22 +67,26 @@ export default function AdminDashboardPage() {
   });
 
   // --- Coupons State ---
-  const [coupons, setCoupons] = useState([
-    { id: 1, code: 'VEDA10', discount: '10% OFF', type: 'percentage', minOrder: 999, active: true, uses: 142 },
-    { id: 2, code: 'AYUSH50', discount: '₹50 FLAT', type: 'fixed', minOrder: 499, active: true, uses: 310 },
-    { id: 3, code: 'SWARNA20', discount: '20% OFF', type: 'percentage', minOrder: 2999, active: true, uses: 89 },
-    { id: 4, code: 'FREESHIP', discount: 'Free Shipping', type: 'shipping', minOrder: 0, active: false, uses: 45 },
-  ]);
+  const [coupons, setCoupons] = useState(() => {
+    try {
+      const stored = localStorage.getItem('vagvat_coupons');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [newCouponCode, setNewCouponCode] = useState('');
   const [newCouponDiscount, setNewCouponDiscount] = useState('');
 
   // --- Reviews State ---
-  const [reviews, setReviews] = useState([
-    { id: 1, author: 'Dr. Alok Verma', product: 'Mall Yoddha (Swarna Bhasma)', rating: 5, date: '18 Nov 2026', comment: 'Exceptional stamina and clean muscle vitality. Authentic Swarna Bhasma calx.', approved: true },
-    { id: 2, author: 'Pooja Kulkarni', product: 'Kumkumadi Tailam (24K Gold)', rating: 5, date: '17 Nov 2026', comment: 'Deep radiance within 7 nights of usage. Authentic saffron aroma.', approved: true },
-    { id: 3, author: 'Vikram Rajput', product: 'Shilajit Pure Himalayan Resin', rating: 5, date: '16 Nov 2026', comment: 'Pure resin quality, tested with warm milk. Highly potent formulation.', approved: true },
-    { id: 4, author: 'Ananya Sharma', product: 'Amrit Rasayana', rating: 4, date: '15 Nov 2026', comment: 'Great daily rejuvenation for digestion and clarity.', approved: false },
-  ]);
+  const [reviews, setReviews] = useState(() => {
+    try {
+      const stored = localStorage.getItem('vagvat_customer_reviews');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // --- Website Management State ---
   const [announcementText, setAnnouncementText] = useState('🌿 100% Authentic Classical Formulations • Free Sacred Shipping Across India on Orders Above ₹499');
@@ -91,82 +95,27 @@ export default function AdminDashboardPage() {
   const [dispensaryActive, setDispensaryActive] = useState(true);
   const [websiteSavedNotice, setWebsiteSavedNotice] = useState(false);
 
-  // Initial Load from localStorage or defaults
+  // Initial Load from localStorage (strictly real data, demo data purged)
   useEffect(() => {
     // 1. Load orders
     try {
       const storedOrders = localStorage.getItem('vagvat_orders');
       if (storedOrders) {
         const parsed = JSON.parse(storedOrders);
-        const normalized = parsed.map(o => ({
+        const DEMO_IDS = ['VAGVAT-920184', 'VAGVAT-891042', 'VAGVAT-773820', 'VAGVAT-662910', 'VAGVAT-839201'];
+        const realOrders = parsed.filter(o => !DEMO_IDS.includes(o.orderId));
+        const normalized = realOrders.map(o => ({
           ...o,
           status: o.status === 'Delivered' ? 'Delivered' : 'Ordered'
         }));
         setOrders(normalized);
+        localStorage.setItem('vagvat_orders', JSON.stringify(normalized));
       } else {
-        const initialOrders = [
-          {
-            orderId: 'VAGVAT-920184',
-            customerName: 'Raghavendra Rao',
-            customerEmail: 'raghav.rao@example.com',
-            customerPhone: '+91 98765 43210',
-            date: '19 Nov 2026',
-            total: 4798,
-            paymentMethod: 'UPI (PhonePe)',
-            status: 'Ordered',
-            shippingAddress: 'Plot 45, Sector 14, Gurugram, Haryana - 122001',
-            items: [
-              { name: 'Mall Yoddha (Swarna Bhasma)', quantity: 1, price: 3499, volume: 'Net Wt. 1 kg' },
-              { name: 'Shilajit Pure Himalayan Resin', quantity: 1, price: 1299, volume: '20 g' }
-            ]
-          },
-          {
-            orderId: 'VAGVAT-891042',
-            customerName: 'Priya Mukherjee',
-            customerEmail: 'priya.m@example.com',
-            customerPhone: '+91 98112 34567',
-            date: '18 Nov 2026',
-            total: 1899,
-            paymentMethod: 'Credit Card',
-            status: 'Ordered',
-            shippingAddress: 'Flat 4B, Southern Avenue, Kolkata, West Bengal - 700029',
-            items: [
-              { name: 'Kumkumadi Tailam (24K Gold)', quantity: 1, price: 1899, volume: '30 ml' }
-            ]
-          },
-          {
-            orderId: 'VAGVAT-773820',
-            customerName: 'Devrat Singhania',
-            customerEmail: 'devrat.s@example.com',
-            customerPhone: '+91 97234 56789',
-            date: '16 Nov 2026',
-            total: 3499,
-            paymentMethod: 'Instant UPI',
-            status: 'Delivered',
-            shippingAddress: 'House 12, Civil Lines, Jaipur, Rajasthan - 302006',
-            items: [
-              { name: 'Mall Yoddha (Swarna Bhasma)', quantity: 1, price: 3499, volume: 'Net Wt. 1 kg' }
-            ]
-          },
-          {
-            orderId: 'VAGVAT-662910',
-            customerName: 'Ananya Deshmukh',
-            customerEmail: 'ananya.d@example.com',
-            customerPhone: '+91 99887 65432',
-            date: '15 Nov 2026',
-            total: 549,
-            paymentMethod: 'Cash on Delivery',
-            status: 'Delivered',
-            shippingAddress: '7th Floor, Prabhat Road, Pune, Maharashtra - 411004',
-            items: [
-              { name: 'Kosht Sudha', quantity: 1, price: 549, volume: '60 Capsules' }
-            ]
-          }
-        ];
-        setOrders(initialOrders);
-        localStorage.setItem('vagvat_orders', JSON.stringify(initialOrders));
+        setOrders([]);
       }
-    } catch {}
+    } catch {
+      setOrders([]);
+    }
 
     // 2. Load inventory with stock counts
     try {
@@ -263,7 +212,11 @@ export default function AdminDashboardPage() {
 
   // Toggle Coupon Active
   const handleToggleCoupon = (id) => {
-    setCoupons(coupons.map(c => c.id === id ? { ...c, active: !c.active } : c));
+    const updated = coupons.map(c => c.id === id ? { ...c, active: !c.active } : c);
+    setCoupons(updated);
+    try {
+      localStorage.setItem('vagvat_coupons', JSON.stringify(updated));
+    } catch {}
   };
 
   // Add Coupon
@@ -279,14 +232,35 @@ export default function AdminDashboardPage() {
       active: true,
       uses: 0
     };
-    setCoupons([item, ...coupons]);
+    const updated = [item, ...coupons];
+    setCoupons(updated);
+    try {
+      localStorage.setItem('vagvat_coupons', JSON.stringify(updated));
+    } catch {}
     setNewCouponCode('');
     setNewCouponDiscount('');
   };
 
   // Toggle Review Approval
   const handleToggleReview = (id) => {
-    setReviews(reviews.map(r => r.id === id ? { ...r, approved: !r.approved } : r));
+    const updated = reviews.map(r => r.id === id ? { ...r, approved: !r.approved } : r);
+    setReviews(updated);
+    try {
+      localStorage.setItem('vagvat_customer_reviews', JSON.stringify(updated));
+    } catch {}
+  };
+
+  // Clean Store Data / Reset for Production Launch
+  const handleCleanStoreData = () => {
+    if (window.confirm('Reset all demo orders and customer records for live launch?')) {
+      try {
+        localStorage.removeItem('vagvat_orders');
+        localStorage.removeItem('vagvat_customer_reviews');
+      } catch {}
+      setOrders([]);
+      setReviews([]);
+      alert('Store data cleaned! Ready for official customer orders.');
+    }
   };
 
   // Save Website Settings
@@ -546,24 +520,32 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="divide-y divide-[#C9A45C]/15">
-                    {orders.slice(0, 4).map((order) => (
-                      <div key={order.orderId} className="py-3 flex items-center justify-between text-xs">
-                        <div>
-                          <span className="font-mono font-bold text-[#DFC282]">{order.orderId}</span>
-                          <span className="text-white block font-medium">{order.customerName}</span>
-                          <span className="text-[10px] text-[#DCE5D5]/60">{order.date} • {order.items.length} item(s)</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-bold text-[#F7F0DF] text-sm block">₹{order.total}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
-                            order.status === 'Delivered' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' :
-                            'bg-amber-950 text-amber-300 border border-amber-500/30'
-                          }`}>
-                            {order.status === 'Delivered' ? 'Delivered' : 'Ordered'}
-                          </span>
-                        </div>
+                    {orders.length === 0 ? (
+                      <div className="py-8 text-center text-white/50 text-xs">
+                        <ShoppingBag className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
+                        <p className="text-white font-semibold">No customer orders yet</p>
+                        <span className="text-[#DCE5D5]/60 text-[11px]">When customers complete purchases on the storefront, orders will appear here in real time.</span>
                       </div>
-                    ))}
+                    ) : (
+                      orders.slice(0, 4).map((order) => (
+                        <div key={order.orderId} className="py-3 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-mono font-bold text-[#DFC282]">{order.orderId}</span>
+                            <span className="text-white block font-medium">{order.customerName}</span>
+                            <span className="text-[10px] text-[#DCE5D5]/60">{order.date} • {order.items.length} item(s)</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-[#F7F0DF] text-sm block">₹{order.total}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
+                              order.status === 'Delivered' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' :
+                              'bg-amber-950 text-amber-300 border border-amber-500/30'
+                            }`}>
+                              {order.status === 'Delivered' ? 'Delivered' : 'Ordered'}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -1110,16 +1092,26 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#C9A45C]/15">
-                      {customersList.map((c, idx) => (
-                        <tr key={idx} className="hover:bg-white/5 transition-colors">
-                          <td className="p-4 font-bold text-white">{c.name}</td>
-                          <td className="p-4 font-mono text-[#DCE5D5]/80">{c.phone}</td>
-                          <td className="p-4 text-[#DCE5D5]/80">{c.email || 'N/A'}</td>
-                          <td className="p-4 font-mono font-bold text-[#DFC282]">{c.ordersCount}</td>
-                          <td className="p-4 font-bold text-white">₹{c.totalSpent}</td>
-                          <td className="p-4 text-[#DCE5D5]/60 text-[11px]">{c.lastOrder}</td>
+                      {customersList.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="p-8 text-center text-white/50">
+                            <Users className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
+                            <p className="text-white font-semibold">No customer accounts recorded yet</p>
+                            <span className="text-[#DCE5D5]/60 text-[11px]">When customers place orders or sign up, their profile and contact records will appear here.</span>
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        customersList.map((c, idx) => (
+                          <tr key={idx} className="hover:bg-white/5 transition-colors">
+                            <td className="p-4 font-bold text-white">{c.name}</td>
+                            <td className="p-4 font-mono text-[#DCE5D5]/80">{c.phone}</td>
+                            <td className="p-4 text-[#DCE5D5]/80">{c.email || 'N/A'}</td>
+                            <td className="p-4 font-mono font-bold text-[#DFC282]">{c.ordersCount}</td>
+                            <td className="p-4 font-bold text-white">₹{c.totalSpent}</td>
+                            <td className="p-4 text-[#DCE5D5]/60 text-[11px]">{c.lastOrder}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1166,20 +1158,30 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#C9A45C]/15">
-                      {orders.map((o) => (
-                        <tr key={o.orderId} className="hover:bg-white/5">
-                          <td className="p-4 font-mono text-[11px] text-[#DCE5D5]/70">TXN-{o.orderId.replace('VAGVAT-', '')}</td>
-                          <td className="p-4 font-mono font-bold text-[#DFC282]">{o.orderId}</td>
-                          <td className="p-4 text-white font-medium">{o.customerName}</td>
-                          <td className="p-4 text-[#DCE5D5]/80">{o.paymentMethod || 'Instant UPI'}</td>
-                          <td className="p-4 font-bold text-white">₹{o.total}</td>
-                          <td className="p-4">
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-400">
-                              Captured
-                            </span>
+                      {orders.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="p-8 text-center text-white/50">
+                            <CreditCard className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
+                            <p className="text-white font-semibold">No payment transactions recorded yet</p>
+                            <span className="text-[#DCE5D5]/60 text-[11px]">Captured Razorpay, UPI, and COD payments will automatically be logged here.</span>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        orders.map((o) => (
+                          <tr key={o.orderId} className="hover:bg-white/5">
+                            <td className="p-4 font-mono text-[11px] text-[#DCE5D5]/70">TXN-{o.orderId.replace('VAGVAT-', '')}</td>
+                            <td className="p-4 font-mono font-bold text-[#DFC282]">{o.orderId}</td>
+                            <td className="p-4 text-white font-medium">{o.customerName}</td>
+                            <td className="p-4 text-[#DCE5D5]/80">{o.paymentMethod || 'Instant UPI'}</td>
+                            <td className="p-4 font-bold text-white">₹{o.total}</td>
+                            <td className="p-4">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-400">
+                                Captured
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1220,30 +1222,38 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Coupons List */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {coupons.map((coupon) => (
-                  <div key={coupon.id} className="p-5 rounded-2xl bg-[#102C20] border border-[#C9A45C]/30 shadow flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-lg text-[#C9A45C]">{coupon.code}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">
-                          {coupon.discount}
-                        </span>
+              {coupons.length === 0 ? (
+                <div className="p-8 bg-[#102C20] rounded-2xl border border-[#C9A45C]/30 text-center text-xs text-white/50">
+                  <Tag className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
+                  <p className="text-white font-semibold">No promotional vouchers created yet</p>
+                  <span className="text-[#DCE5D5]/60 text-[11px]">Use the creation bar above to configure launch discount codes (e.g., LAUNCH10, VAGVAT50).</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {coupons.map((coupon) => (
+                    <div key={coupon.id} className="p-5 rounded-2xl bg-[#102C20] border border-[#C9A45C]/30 shadow flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono font-bold text-lg text-[#C9A45C]">{coupon.code}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">
+                            {coupon.discount}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#DCE5D5]/70 mt-1">Min Order: ₹{coupon.minOrder} • Redeemed: {coupon.uses} times</p>
                       </div>
-                      <p className="text-xs text-[#DCE5D5]/70 mt-1">Min Order: ₹{coupon.minOrder} • Redeemed: {coupon.uses} times</p>
-                    </div>
 
-                    <button
-                      onClick={() => handleToggleCoupon(coupon.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${
-                        coupon.active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-red-500/20 text-red-400'
-                      }`}
-                    >
-                      {coupon.active ? 'Active' : 'Disabled'}
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <button
+                        onClick={() => handleToggleCoupon(coupon.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${
+                          coupon.active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-red-500/20 text-red-400'
+                        }`}
+                      >
+                        {coupon.active ? 'Active' : 'Disabled'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1256,57 +1266,40 @@ export default function AdminDashboardPage() {
                   <span className="text-2xl font-bold text-white block mt-1">
                     ₹{orders.length > 0 ? (totalRevenue / orders.length).toFixed(0) : '0'}
                   </span>
-                  <span className="text-[10px] text-emerald-400 mt-1 block">Higher than industry average</span>
+                  <span className="text-[10px] text-emerald-400 mt-1 block">Live storefront metric</span>
                 </div>
 
                 <div className="bg-[#102C20] p-5 rounded-2xl border border-[#C9A45C]/30">
-                  <span className="text-xs text-[#DFC282] uppercase font-semibold">Flagship Revenue Share</span>
-                  <span className="text-2xl font-bold text-white block mt-1">68%</span>
-                  <span className="text-[10px] text-[#C9A45C] mt-1 block">Mall Yoddha (Swarna Bhasma)</span>
+                  <span className="text-xs text-[#DFC282] uppercase font-semibold">Total Revenue Captured</span>
+                  <span className="text-2xl font-bold text-white block mt-1">
+                    ₹{totalRevenue.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-[#C9A45C] mt-1 block">From verified customer orders</span>
                 </div>
 
                 <div className="bg-[#102C20] p-5 rounded-2xl border border-[#C9A45C]/30">
-                  <span className="text-xs text-[#DFC282] uppercase font-semibold">Repeat Customer Rate</span>
-                  <span className="text-2xl font-bold text-white block mt-1">42.8%</span>
-                  <span className="text-[10px] text-emerald-400 mt-1 block">High patient therapeutic trust</span>
+                  <span className="text-xs text-[#DFC282] uppercase font-semibold">Delivered Formulations</span>
+                  <span className="text-2xl font-bold text-white block mt-1">
+                    {orders.filter(o => o.status === 'Delivered').length}
+                  </span>
+                  <span className="text-[10px] text-emerald-400 mt-1 block">Successfully fulfilled</span>
                 </div>
               </div>
 
-              {/* Category Breakdown Progress Bars */}
-              <div className="p-6 rounded-2xl bg-[#102C20] border border-[#C9A45C]/30 space-y-4">
-                <h3 className="font-serif font-bold text-base text-white">Sales Distribution by Formulation Category</h3>
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span>Strength & Stamina (Mall Yoddha, Shilajit)</span>
-                      <span className="font-bold text-[#C9A45C]">55%</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-[#C9A45C] rounded-full" style={{ width: '55%' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span>Skin & Beauty (Kumkumadi Tailam 24K)</span>
-                      <span className="font-bold text-emerald-400">25%</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '25%' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span>Digestive & Metabolic (Kosht Sudha)</span>
-                      <span className="font-bold text-blue-400">20%</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-black/40 overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: '20%' }} />
-                    </div>
+              {orders.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-[#102C20] border border-[#C9A45C]/30 text-center text-xs text-white/50">
+                  <TrendingUp className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
+                  <p className="font-semibold text-white mb-1">Awaiting Initial Storefront Orders</p>
+                  <span>Category sales distributions and product velocity analytics will populate here automatically as live orders are placed.</span>
+                </div>
+              ) : (
+                <div className="p-6 rounded-2xl bg-[#102C20] border border-[#C9A45C]/30 space-y-4">
+                  <h3 className="font-serif font-bold text-base text-white">Sales Distribution</h3>
+                  <div className="text-xs text-[#DCE5D5]/80">
+                    Total {orders.length} order(s) processed for ₹{totalRevenue.toLocaleString()} total gross volume.
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -1319,34 +1312,42 @@ export default function AdminDashboardPage() {
                   <span className="text-xs text-[#DFC282]">{reviews.length} Total Submissions</span>
                 </div>
 
-                <div className="divide-y divide-[#C9A45C]/15">
-                  {reviews.map((rev) => (
-                    <div key={rev.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-white">{rev.author}</span>
-                          <span className="text-[#C9A45C] flex">
-                            {'★'.repeat(rev.rating)}
-                          </span>
-                          <span className="text-[10px] text-[#DCE5D5]/60">• {rev.date}</span>
+                {reviews.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-white/50">
+                    <Star className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
+                    <p className="text-white font-semibold">No customer reviews submitted yet</p>
+                    <span className="text-[#DCE5D5]/60 text-[11px]">When customers submit reviews on product formulation pages, they will appear here for your moderation.</span>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[#C9A45C]/15">
+                    {reviews.map((rev) => (
+                      <div key={rev.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-white">{rev.author}</span>
+                            <span className="text-[#C9A45C] flex">
+                              {'★'.repeat(rev.rating)}
+                            </span>
+                            <span className="text-[10px] text-[#DCE5D5]/60">• {rev.date}</span>
+                          </div>
+                          <span className="text-[#DFC282] font-semibold block">{rev.product}</span>
+                          <p className="text-[#DCE5D5]/80 italic">"{rev.comment}"</p>
                         </div>
-                        <span className="text-[#DFC282] font-semibold block">{rev.product}</span>
-                        <p className="text-[#DCE5D5]/80 italic">"{rev.comment}"</p>
-                      </div>
 
-                      <div className="flex items-center space-x-2 self-start sm:self-auto">
-                        <button
-                          onClick={() => handleToggleReview(rev.id)}
-                          className={`px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-colors ${
-                            rev.approved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
-                          }`}
-                        >
-                          {rev.approved ? 'Approved • Visible' : 'Pending Review'}
-                        </button>
+                        <div className="flex items-center space-x-2 self-start sm:self-auto">
+                          <button
+                            onClick={() => handleToggleReview(rev.id)}
+                            className={`px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer transition-colors ${
+                              rev.approved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
+                            }`}
+                          >
+                            {rev.approved ? 'Approved • Visible' : 'Pending Review'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1462,11 +1463,25 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
 
+                  <div className="p-4 bg-amber-950/20 border border-amber-500/25 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[#DFC282] font-semibold block">Store Data & Production Launch Mode</span>
+                      <span className="text-[#DCE5D5]/60 text-[11px]">Purge all test/demo orders, customer logs, and start with a completely clean zero-state store for launch.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCleanStoreData}
+                      className="px-4 py-2 bg-amber-900/60 hover:bg-amber-800 text-amber-200 text-xs font-bold uppercase rounded-lg border border-amber-500/40 transition-colors cursor-pointer shrink-0"
+                    >
+                      Clean Test Data
+                    </button>
+                  </div>
+
                   <div className="pt-4 flex items-center justify-between border-t border-[#C9A45C]/20">
                     <span className="text-[#DCE5D5]/60 text-[11px]">Session Active • Vagvat Ayurveda Dispensary</span>
                     <button
                       onClick={handleLogout}
-                      className="px-5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900/60 text-red-200 border border-red-500/30 font-bold uppercase text-xs"
+                      className="px-5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900/60 text-red-200 border border-red-500/30 font-bold uppercase text-xs cursor-pointer"
                     >
                       Logout
                     </button>

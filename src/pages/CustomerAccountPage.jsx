@@ -41,21 +41,9 @@ export default function CustomerAccountPage() {
         const parsed = JSON.parse(stored);
         // Filter orders for this user if email is attached, or show user's orders
         const userOrders = parsed.filter(o => !o.customerEmail || o.customerEmail === currentUser?.email);
-        setOrders(userOrders.length > 0 ? userOrders : parsed);
+        setOrders(userOrders);
       } else {
-        // Sample order for demo/patron preview if no previous orders
-        setOrders([
-          {
-            orderId: 'VAGVAT-839201',
-            date: new Date(Date.now() - 3 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-            total: 3499,
-            status: 'Delivered',
-            trackingNumber: 'BLUEDART-88291039',
-            items: [
-              { name: 'Mall Yoddha (Swarna Bhasma)', quantity: 1, price: 3499, volume: 'Net Wt. 1 kg' }
-            ]
-          }
-        ]);
+        setOrders([]);
       }
     } catch (e) {
       console.warn('Orders load error:', e);
