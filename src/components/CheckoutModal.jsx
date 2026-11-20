@@ -128,8 +128,8 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         subtotal: Number(subtotal),
         discountAmount: Number(discountAmount),
         shippingCost: Number(shippingCost),
-        paymentMethod: 'Online Payment (Razorpay)',
-        paymentStatus: 'Paid',
+        paymentMethod: 'Online Payment',
+        paymentStatus: 'Pending',
         paymentId: paymentId || `pay_${Math.random().toString(36).substring(2, 12)}`,
         status: 'Ordered',
         userId: currentUser?.uid || null,
@@ -217,20 +217,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
   return (
     <AnimatePresence>
       {isOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-lg text-center">
-              <p className="text-lg font-semibold">Connecting to Razorpay…</p>
-            </div>
-          </div>
-        ) &&
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          {isProcessing && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
-              <div className="bg-white p-4 rounded shadow-lg text-center">
-                <p className="text-lg font-semibold">Connecting to Razorpay…</p>
-              </div>
-            </div>
-          )}
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -507,7 +494,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
               <form onSubmit={handleNextStep} className="p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h4 className="font-serif text-base font-bold text-[#173D2B]">
-                    2. Secure Online Payment (Razorpay)
+                    2. Order Confirmation
                   </h4>
                   <button
                     type="button"
@@ -577,7 +564,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Payment Gateway</span>
-                    <span className="text-[#173D2B] font-bold text-emerald-800">Online Payment via Razorpay</span>
+                    <span className="text-[#173D2B] font-bold text-emerald-800">Online Payment</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Shipping To</span>
@@ -597,7 +584,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                 >
                   <Lock className="w-4 h-4" />
                   <span>
-                    {isProcessing ? 'Connecting to Razorpay...' : `PROCEED TO PAY ONLINE • ₹${finalTotal}`}
+                    {isProcessing ? 'Placing Your Order...' : `PLACE ORDER • ₹${finalTotal}`}
                   </span>
                 </button>
               </form>
