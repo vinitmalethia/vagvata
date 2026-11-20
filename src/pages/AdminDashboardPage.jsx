@@ -53,6 +53,7 @@ export default function AdminDashboardPage() {
   // 'dashboard' | 'products' | 'orders' | 'inventory' | 'customers' | 'payments' | 'coupons' | 'reports' | 'reviews' | 'website' | 'settings'
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLiveSyncing, setIsLiveSyncing] = useState(true);
 
   // --- Orders State (Synchronized via Cloud Firestore) ---
   const [orders, setOrders] = useState([]);
@@ -157,6 +158,7 @@ export default function AdminDashboardPage() {
         setOrders(liveOrders);
         setOrdersLoading(false);
         setOrdersError(null);
+        setIsLiveSyncing(true);
 
         // Keep local cache updated for offline resilience
         try {
@@ -167,6 +169,7 @@ export default function AdminDashboardPage() {
         console.warn('Real-time Firestore listener notice:', error);
         setOrdersError(error.message);
         setOrdersLoading(false);
+        setIsLiveSyncing(false);
         // Fallback to local storage if offline
         try {
           const cached = localStorage.getItem('vagvat_orders');
@@ -426,44 +429,45 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07130D] text-[#F7F0DF] flex font-sans">
+    <div className="min-h-screen bg-[#07130D] text-[#F7F0DF] flex font-sans overflow-x-hidden">
       
       {/* ===================== SIDEBAR ===================== */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-[#0D241A] border-r border-[#C9A45C]/30 flex flex-col justify-between transition-transform duration-300 ease-in-out
-        lg:static lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        fixed inset-y-0 left-0 z-50 w-64 sm:w-72 bg-[#0D241A] border-r border-[#C9A45C]/30 flex flex-col justify-between transition-transform duration-300 ease-in-out shadow-2xl
+        lg:static lg:w-64 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Top Branding */}
         <div>
-          <div className="p-5 border-b border-[#C9A45C]/20 flex items-center justify-between">
+          <div className="p-4 sm:p-5 border-b border-[#C9A45C]/20 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-[#C9A45C] text-[#102C20] flex items-center justify-center font-bold shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-[#C9A45C] text-[#102C20] flex items-center justify-center font-bold shadow-md shrink-0">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <div>
-                <h2 className="font-serif font-bold text-base text-[#F7F0DF] leading-tight">Vagvat Admin</h2>
+              <div className="min-w-0">
+                <h2 className="font-serif font-bold text-base text-[#F7F0DF] leading-tight truncate">Vagvat Admin</h2>
                 <span className="text-[10px] text-[#C9A45C] font-mono tracking-wider uppercase block">Dispensary Portal</span>
               </div>
             </div>
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden text-white/60 hover:text-white p-1"
+              aria-label="Close Admin Menu"
+              className="lg:hidden text-white/60 hover:text-white p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-white/10"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Logged in Admin Pill */}
-          <div className="px-5 py-3 bg-[#102C20]/80 border-b border-[#C9A45C]/15 flex items-center space-x-2.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <div className="truncate text-xs">
+          <div className="px-4 sm:px-5 py-3 bg-[#102C20]/80 border-b border-[#C9A45C]/15 flex items-center space-x-2.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <div className="truncate text-xs min-w-0">
               <span className="text-[#DFC282] font-semibold block truncate">Vaidya Sachin</span>
               <span className="text-[11px] text-[#DCE5D5]/60 font-mono block truncate">{currentUser?.email || 'sachin@gmail.com'}</span>
             </div>
           </div>
 
           {/* Sorted Nav Items */}
-          <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-220px)] no-scrollbar">
+          <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-210px)] no-scrollbar">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -474,10 +478,10 @@ export default function AdminDashboardPage() {
                     setActiveTab(item.id);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3.5 py-3 sm:py-2.5 min-h-[44px] rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                     isActive
                       ? 'bg-[#C9A45C] text-[#0D241A] font-bold shadow-md'
-                      : 'text-[#DCE5D5]/80 hover:text-white hover:bg-white/5'
+                      : 'text-[#DCE5D5]/80 hover:text-white hover:bg-white/5 active:bg-white/10'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -506,7 +510,7 @@ export default function AdminDashboardPage() {
         <div className="p-4 border-t border-[#C9A45C]/20 bg-[#0A1B13]">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-red-950/50 hover:bg-red-900/60 text-red-200 border border-red-500/30 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 min-h-[44px] rounded-xl bg-red-950/50 hover:bg-red-900/60 active:bg-red-900 text-red-200 border border-red-500/30 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>
@@ -518,76 +522,116 @@ export default function AdminDashboardPage() {
       {isMobileMenuOpen && (
         <div 
           onClick={() => setIsMobileMenuOpen(false)}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 lg:hidden transition-opacity"
         />
       )}
 
       {/* ===================== MAIN CONTENT ===================== */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden w-full">
         
         {/* TOP BAR */}
-        <header className="sticky top-0 z-30 bg-[#0D241A]/95 backdrop-blur-md border-b border-[#C9A45C]/25 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <header className="sticky top-0 z-30 bg-[#0D241A]/95 backdrop-blur-md border-b border-[#C9A45C]/25 px-3 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-lg bg-white/5 text-[#DFC282] hover:text-white"
+              aria-label="Open Admin Menu"
+              className="lg:hidden p-2.5 min-w-[42px] min-h-[42px] rounded-xl bg-white/5 hover:bg-white/10 text-[#DFC282] hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="font-serif text-lg sm:text-xl font-bold text-[#F7F0DF] capitalize">
-                {NAV_ITEMS.find(n => n.id === activeTab)?.label || 'Dashboard'}
-              </h1>
-              <p className="text-[11px] text-[#DCE5D5]/60 hidden sm:block">
+            <div className="min-w-0">
+              <div className="flex items-center space-x-2">
+                <h1 className="font-serif text-base sm:text-xl font-bold text-[#F7F0DF] capitalize leading-tight truncate">
+                  {NAV_ITEMS.find(n => n.id === activeTab)?.label || 'Dashboard'}
+                </h1>
+                <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase shrink-0 ${
+                  isLiveSyncing 
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isLiveSyncing ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                  <span className="hidden xs:inline">{isLiveSyncing ? 'Live Sync' : 'Offline'}</span>
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-[#DCE5D5]/60 hidden md:block truncate">
                 Vagvat Ayurveda Dispensary Management System
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             <Link
               to="/"
               target="_blank"
-              className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#F7F0DF] text-xs font-semibold transition-all flex items-center space-x-1.5"
+              className="px-3 py-1.5 min-h-[38px] rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/25 text-[#F7F0DF] text-xs font-semibold transition-all flex items-center space-x-1.5"
             >
-              <span>Storefront</span>
+              <span className="hidden sm:inline">Storefront</span>
               <ExternalLink className="w-3.5 h-3.5 text-[#C9A45C]" />
             </Link>
           </div>
         </header>
 
+        {/* Mobile Quick Tab Bar */}
+        <div className="lg:hidden bg-[#0A1B13] border-b border-[#C9A45C]/20 px-2 py-2 overflow-x-auto no-scrollbar flex space-x-1.5 shrink-0">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center space-x-1.5 transition-all shrink-0 min-h-[36px] ${
+                  isActive
+                    ? 'bg-[#C9A45C] text-[#0D241A] font-bold shadow'
+                    : 'bg-white/5 text-[#DCE5D5]/70 hover:text-white'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#0D241A]' : 'text-[#C9A45C]'}`} />
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isActive ? 'bg-[#0D241A] text-[#C9A45C]' : 'bg-white/10 text-[#DFC282]'
+                  }`}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
         {/* TAB CONTENT CONTAINER */}
-        <div className="p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
+        <div className="p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-5 sm:space-y-6">
 
           {/* ================= 1. DASHBOARD ================= */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               {/* 4 KPI Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-[#102C20] rounded-2xl p-5 border border-[#C9A45C]/30 shadow">
-                  <span className="text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block">Total Revenue</span>
-                  <div className="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">₹{totalRevenue.toLocaleString()}</div>
-                  <span className="text-[10px] text-emerald-400 mt-1 block">✦ All confirmed orders</span>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-[#102C20] rounded-2xl p-4 sm:p-5 border border-[#C9A45C]/30 shadow">
+                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block truncate">Total Revenue</span>
+                  <div className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold text-white mt-1 truncate">₹{totalRevenue.toLocaleString()}</div>
+                  <span className="text-[9px] sm:text-[10px] text-emerald-400 mt-1 block truncate">✦ Confirmed orders</span>
                 </div>
 
-                <div className="bg-[#102C20] rounded-2xl p-5 border border-[#C9A45C]/30 shadow">
-                  <span className="text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block">Total Orders</span>
-                  <div className="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">{orders.length}</div>
-                  <span className="text-[10px] text-[#DFC282] mt-1 block">{activeOrdersCount} Pending dispatch</span>
+                <div className="bg-[#102C20] rounded-2xl p-4 sm:p-5 border border-[#C9A45C]/30 shadow">
+                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block truncate">Total Orders</span>
+                  <div className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold text-white mt-1">{orders.length}</div>
+                  <span className="text-[9px] sm:text-[10px] text-[#DFC282] mt-1 block truncate">{activeOrdersCount} Pending dispatch</span>
                 </div>
 
-                <div className="bg-[#102C20] rounded-2xl p-5 border border-[#C9A45C]/30 shadow">
-                  <span className="text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block">Products in Stock</span>
-                  <div className="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">
+                <div className="bg-[#102C20] rounded-2xl p-4 sm:p-5 border border-[#C9A45C]/30 shadow">
+                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block truncate">In Stock</span>
+                  <div className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold text-white mt-1 truncate">
                     {inventory.filter(i => i.inStock).length} / {inventory.length}
                   </div>
-                  <span className="text-[10px] text-emerald-400 mt-1 block">Shastriya formulations</span>
+                  <span className="text-[9px] sm:text-[10px] text-emerald-400 mt-1 block truncate">Shastriya herbs</span>
                 </div>
 
-                <div className="bg-[#102C20] rounded-2xl p-5 border border-[#C9A45C]/30 shadow">
-                  <span className="text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block">Total Customers</span>
-                  <div className="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">{customersList.length}</div>
-                  <span className="text-[10px] text-[#C9A45C] mt-1 block">Verified patient accounts</span>
+                <div className="bg-[#102C20] rounded-2xl p-4 sm:p-5 border border-[#C9A45C]/30 shadow">
+                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#DFC282] font-semibold block truncate">Customers</span>
+                  <div className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold text-white mt-1">{customersList.length}</div>
+                  <span className="text-[9px] sm:text-[10px] text-[#C9A45C] mt-1 block truncate">Verified accounts</span>
                 </div>
               </div>
 
@@ -682,7 +726,7 @@ export default function AdminDashboardPage() {
           {activeTab === 'products' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center space-x-2 flex-1 max-w-md">
+                <div className="flex items-center space-x-2 flex-1 w-full sm:max-w-md">
                   <div className="relative w-full">
                     <Search className="w-4 h-4 text-[#C9A45C] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -690,16 +734,16 @@ export default function AdminDashboardPage() {
                       placeholder="Search formulations by name..."
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-[#102C20] border border-[#C9A45C]/30 rounded-xl text-xs text-[#F7F0DF] placeholder:text-white/40 focus:outline-none focus:border-[#C9A45C]"
+                      className="w-full pl-9 pr-3 py-2.5 bg-[#102C20] border border-[#C9A45C]/30 rounded-xl text-xs text-[#F7F0DF] placeholder:text-white/40 focus:outline-none focus:border-[#C9A45C]"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
                   <select
                     value={productCategoryFilter}
                     onChange={(e) => setProductCategoryFilter(e.target.value)}
-                    className="px-3 py-2 bg-[#102C20] border border-[#C9A45C]/30 rounded-xl text-xs text-[#DFC282] focus:outline-none"
+                    className="px-3 py-2.5 bg-[#102C20] border border-[#C9A45C]/30 rounded-xl text-xs text-[#DFC282] focus:outline-none flex-1 sm:flex-none min-h-[40px]"
                   >
                     <option value="All">All Categories</option>
                     <option value="Strength & Stamina">Strength & Stamina</option>
@@ -710,17 +754,18 @@ export default function AdminDashboardPage() {
 
                   <button
                     onClick={() => setIsAddProductOpen(true)}
-                    className="px-4 py-2 bg-[#C9A45C] hover:bg-[#DFC282] text-[#0D241A] rounded-xl text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 cursor-pointer shadow"
+                    className="px-4 py-2.5 bg-[#C9A45C] hover:bg-[#DFC282] text-[#0D241A] rounded-xl text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 cursor-pointer shadow min-h-[40px] shrink-0"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Add Product</span>
+                    <span>Add</span>
                   </button>
                 </div>
               </div>
 
-              {/* Products Table */}
+              {/* Products Container (Desktop Table + Mobile Cards) */}
               <div className="bg-[#102C20] rounded-2xl border border-[#C9A45C]/30 overflow-hidden shadow">
-                <div className="overflow-x-auto">
+                {/* 1. Desktop & Tablet Table (Hidden on Mobile) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#0A1B13] text-[#DFC282] uppercase text-[10px] tracking-wider border-b border-[#C9A45C]/20">
                       <tr>
@@ -764,7 +809,7 @@ export default function AdminDashboardPage() {
                           <td className="p-4 text-right">
                             <button
                               onClick={() => handleToggleStock(p.id)}
-                              className="text-[11px] px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-[#DFC282] transition-colors cursor-pointer"
+                              className="text-[11px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#DFC282] transition-colors cursor-pointer"
                             >
                               Toggle Stock
                             </button>
@@ -774,15 +819,64 @@ export default function AdminDashboardPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* 2. Mobile Formulation Cards (Shown on mobile screens < 768px) */}
+                <div className="md:hidden divide-y divide-[#C9A45C]/15">
+                  {filteredProducts.map((p) => (
+                    <div key={p.id} className="p-4 space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-12 h-14 bg-white/5 rounded-xl border border-[#C9A45C]/20 shrink-0 overflow-hidden flex items-center justify-center p-1">
+                          <ProductVisual product={p} className="w-full h-full" showShadow={false} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-serif font-bold text-sm text-white truncate">{p.name}</h4>
+                              {p.hindiName && <span className="text-[10px] text-[#DFC282] block">{p.hindiName}</span>}
+                            </div>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0 ${
+                              p.inStock ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                            }`}>
+                              {p.inStock ? 'In Stock' : 'Out of Stock'}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-[#DCE5D5]/70 block mt-0.5">{p.category} • {p.volume || p.strength}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                        <div>
+                          <span className="text-base font-bold text-white">₹{p.price}</span>
+                          <span className="text-[11px] text-[#DCE5D5]/60 block">{p.stockCount ?? 25} units available</span>
+                        </div>
+
+                        <button
+                          onClick={() => handleToggleStock(p.id)}
+                          className={`px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                            p.inStock 
+                              ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30' 
+                              : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30'
+                          }`}
+                        >
+                          {p.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Add Product Modal */}
               {isAddProductOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                  <div className="bg-[#102C20] border border-[#C9A45C]/40 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+                  <div className="bg-[#102C20] border border-[#C9A45C]/40 rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
                     <div className="flex items-center justify-between pb-3 border-b border-[#C9A45C]/25">
                       <h3 className="font-serif font-bold text-lg text-white">Add Classical Formulation</h3>
-                      <button onClick={() => setIsAddProductOpen(false)} className="text-white/60 hover:text-white">
+                      <button 
+                        onClick={() => setIsAddProductOpen(false)} 
+                        aria-label="Close"
+                        className="text-white/60 hover:text-white p-2 min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg hover:bg-white/10"
+                      >
                         <X className="w-5 h-5" />
                       </button>
                     </div>
@@ -913,9 +1007,11 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Orders Table */}
+              {/* Orders Container (Responsive Table on Desktop/Tablet, Cards on Mobile) */}
               <div className="bg-[#102C20] rounded-2xl border border-[#C9A45C]/30 overflow-hidden shadow">
-                <div className="overflow-x-auto">
+                
+                {/* 1. Desktop & Tablet Table (Hidden on Mobile) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#0A1B13] text-[#DFC282] uppercase text-[10px] tracking-wider border-b border-[#C9A45C]/20">
                       <tr>
@@ -966,7 +1062,7 @@ export default function AdminDashboardPage() {
                               {order.status !== 'Delivered' ? (
                                 <button
                                   onClick={() => handleUpdateOrderStatus(order.orderId, 'Delivered')}
-                                  className="px-2.5 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold cursor-pointer transition-colors"
+                                  className="px-2.5 py-1.5 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold cursor-pointer transition-colors"
                                   title="Mark as Delivered"
                                 >
                                   Mark Delivered
@@ -974,7 +1070,7 @@ export default function AdminDashboardPage() {
                               ) : (
                                 <button
                                   onClick={() => handleUpdateOrderStatus(order.orderId, 'Ordered')}
-                                  className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-[#DCE5D5]/60 text-[11px] cursor-pointer transition-colors"
+                                  className="px-2.5 py-1.5 rounded bg-white/5 hover:bg-white/10 text-[#DCE5D5]/60 text-[11px] cursor-pointer transition-colors"
                                   title="Mark as Ordered"
                                 >
                                   Mark Ordered
@@ -982,7 +1078,7 @@ export default function AdminDashboardPage() {
                               )}
                               <button
                                 onClick={() => setSelectedOrder(order)}
-                                className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-[#DFC282] text-xs font-semibold cursor-pointer"
+                                className="px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 text-[#DFC282] text-xs font-semibold cursor-pointer"
                               >
                                 View
                               </button>
@@ -993,18 +1089,107 @@ export default function AdminDashboardPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* 2. Mobile Order Cards (Shown on mobile screens < 768px) */}
+                <div className="md:hidden divide-y divide-[#C9A45C]/15">
+                  {filteredOrders.length === 0 ? (
+                    <div className="p-6 text-center text-white/50 text-xs">
+                      No orders found matching your search.
+                    </div>
+                  ) : (
+                    filteredOrders.map((order) => (
+                      <div key={order.orderId} className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-sm text-[#DFC282]">{order.orderId}</span>
+                          <span className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            order.status === 'Delivered'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-950 text-amber-300 border border-amber-500/30'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${order.status === 'Delivered' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                            <span>{order.status === 'Delivered' ? 'Delivered' : 'Ordered'}</span>
+                          </span>
+                        </div>
+
+                        <div className="text-xs space-y-0.5">
+                          <div className="font-bold text-white text-sm">{order.customerName}</div>
+                          <div className="text-[#DCE5D5]/70 flex items-center space-x-2 text-[11px]">
+                            {order.customerPhone && (
+                              <a href={`tel:${order.customerPhone}`} className="text-[#DFC282] hover:underline">
+                                {order.customerPhone}
+                              </a>
+                            )}
+                            <span>•</span>
+                            <span>{order.date}</span>
+                          </div>
+                          {order.shippingAddress && (
+                            <p className="text-[11px] text-[#DCE5D5]/60 truncate pt-0.5">
+                              📍 {order.shippingAddress}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Items preview */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {order.items.map((i, idx) => (
+                            <span key={idx} className="px-2 py-0.5 rounded bg-black/30 border border-white/5 text-[11px] text-[#DCE5D5]/90">
+                              {i.name} <strong className="text-[#DFC282]">×{i.quantity}</strong>
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Total & Touch Action Buttons */}
+                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                          <div>
+                            <span className="text-[10px] uppercase text-[#DCE5D5]/60 block">Total Amount</span>
+                            <span className="font-bold text-base text-[#DFC282]">₹{order.total}</span>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            {order.status !== 'Delivered' ? (
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.orderId, 'Delivered')}
+                                className="px-3.5 py-2 min-h-[40px] rounded-lg bg-emerald-950 hover:bg-emerald-900 active:bg-emerald-800 text-emerald-300 border border-emerald-500/30 text-xs font-semibold cursor-pointer transition-all flex items-center space-x-1"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Delivered</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleUpdateOrderStatus(order.orderId, 'Ordered')}
+                                className="px-3.5 py-2 min-h-[40px] rounded-lg bg-white/5 hover:bg-white/10 active:bg-white/15 text-[#DCE5D5]/70 border border-white/10 text-xs font-semibold cursor-pointer transition-all"
+                              >
+                                <span>Ordered</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setSelectedOrder(order)}
+                              className="px-3.5 py-2 min-h-[40px] rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/25 text-[#DFC282] border border-[#C9A45C]/30 text-xs font-semibold cursor-pointer transition-all"
+                            >
+                              <span>View</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
               {/* Order Details Modal */}
               {selectedOrder && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                  <div className="bg-[#102C20] border border-[#C9A45C]/40 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+                  <div className="bg-[#102C20] border border-[#C9A45C]/40 rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
                     <div className="flex items-center justify-between pb-3 border-b border-[#C9A45C]/25">
                       <div>
                         <h3 className="font-serif font-bold text-lg text-white">Order Details</h3>
                         <span className="font-mono text-xs text-[#C9A45C]">{selectedOrder.orderId}</span>
                       </div>
-                      <button onClick={() => setSelectedOrder(null)} className="text-white/60 hover:text-white">
+                      <button 
+                        onClick={() => setSelectedOrder(null)} 
+                        aria-label="Close"
+                        className="text-white/60 hover:text-white p-2 min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg hover:bg-white/10"
+                      >
                         <X className="w-5 h-5" />
                       </button>
                     </div>
@@ -1088,7 +1273,8 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="bg-[#102C20] rounded-2xl border border-[#C9A45C]/30 overflow-hidden shadow">
-                <div className="overflow-x-auto">
+                {/* 1. Desktop & Tablet Table (Hidden on Mobile) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#0A1B13] text-[#DFC282] uppercase text-[10px] tracking-wider border-b border-[#C9A45C]/20">
                       <tr>
@@ -1122,28 +1308,28 @@ export default function AdminDashboardPage() {
                             <div className="inline-flex items-center space-x-1.5">
                               <button
                                 onClick={() => handleAdjustStock(item.id, -5)}
-                                className="w-7 h-7 rounded bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center cursor-pointer"
+                                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white font-bold flex items-center justify-center cursor-pointer text-xs"
                                 title="Decrease by 5"
                               >
                                 -5
                               </button>
                               <button
                                 onClick={() => handleAdjustStock(item.id, -1)}
-                                className="w-7 h-7 rounded bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center cursor-pointer"
+                                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white font-bold flex items-center justify-center cursor-pointer text-xs"
                                 title="Decrease by 1"
                               >
                                 -1
                               </button>
                               <button
                                 onClick={() => handleAdjustStock(item.id, 1)}
-                                className="w-7 h-7 rounded bg-[#C9A45C]/30 hover:bg-[#C9A45C]/50 text-[#DFC282] font-bold flex items-center justify-center cursor-pointer"
+                                className="w-8 h-8 rounded-lg bg-[#C9A45C]/30 hover:bg-[#C9A45C]/50 active:bg-[#C9A45C]/70 text-[#DFC282] font-bold flex items-center justify-center cursor-pointer text-xs"
                                 title="Increase by 1"
                               >
                                 +1
                               </button>
                               <button
                                 onClick={() => handleAdjustStock(item.id, 10)}
-                                className="w-7 h-7 rounded bg-[#C9A45C] hover:bg-[#DFC282] text-[#0D241A] font-bold flex items-center justify-center cursor-pointer"
+                                className="w-8 h-8 rounded-lg bg-[#C9A45C] hover:bg-[#DFC282] active:bg-[#C9A45C] text-[#0D241A] font-bold flex items-center justify-center cursor-pointer text-xs"
                                 title="Add 10 Batch"
                               >
                                 +10
@@ -1155,6 +1341,64 @@ export default function AdminDashboardPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* 2. Mobile Inventory Cards (Shown on mobile screens < 768px) */}
+                <div className="md:hidden divide-y divide-[#C9A45C]/15">
+                  {inventory.map((item) => (
+                    <div key={item.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-serif font-bold text-sm text-white">{item.name}</h4>
+                          <span className="text-[11px] font-mono text-[#DCE5D5]/60 block">{item.volume || item.strength}</span>
+                        </div>
+                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase shrink-0 ${
+                          item.inStock ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {item.inStock ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div>
+                          <span className="text-[10px] uppercase text-[#DCE5D5]/60 block">Units Available</span>
+                          <span className={`font-mono font-bold text-lg ${
+                            (item.stockCount || 0) < 20 ? 'text-amber-400' : 'text-white'
+                          }`}>
+                            {item.stockCount ?? 25}
+                          </span>
+                        </div>
+
+                        {/* Large Touch Controls */}
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            onClick={() => handleAdjustStock(item.id, -5)}
+                            className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 text-white font-bold flex items-center justify-center text-xs active:scale-95 transition-transform"
+                          >
+                            -5
+                          </button>
+                          <button
+                            onClick={() => handleAdjustStock(item.id, -1)}
+                            className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 text-white font-bold flex items-center justify-center text-xs active:scale-95 transition-transform"
+                          >
+                            -1
+                          </button>
+                          <button
+                            onClick={() => handleAdjustStock(item.id, 1)}
+                            className="w-10 h-10 rounded-xl bg-[#C9A45C]/30 hover:bg-[#C9A45C]/50 active:bg-[#C9A45C]/70 text-[#DFC282] font-bold flex items-center justify-center text-xs active:scale-95 transition-transform"
+                          >
+                            +1
+                          </button>
+                          <button
+                            onClick={() => handleAdjustStock(item.id, 10)}
+                            className="w-10 h-10 rounded-xl bg-[#C9A45C] hover:bg-[#DFC282] active:bg-[#C9A45C] text-[#0D241A] font-bold flex items-center justify-center text-xs active:scale-95 transition-transform"
+                          >
+                            +10
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -1162,13 +1406,15 @@ export default function AdminDashboardPage() {
           {/* ================= 5. CUSTOMERS ================= */}
           {activeTab === 'customers' && (
             <div className="space-y-4">
+              {/* Customers Container (Desktop Table + Mobile Cards) */}
               <div className="bg-[#102C20] rounded-2xl border border-[#C9A45C]/30 overflow-hidden shadow">
                 <div className="p-4 border-b border-[#C9A45C]/20 flex items-center justify-between">
                   <h3 className="font-serif font-bold text-base text-white">Registered Patients & Customers</h3>
                   <span className="text-xs text-[#DFC282]">{customersList.length} Customer Record(s)</span>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* 1. Desktop & Tablet Table (Hidden on Mobile) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#0A1B13] text-[#DFC282] uppercase text-[10px] tracking-wider border-b border-[#C9A45C]/20">
                       <tr>
@@ -1204,6 +1450,39 @@ export default function AdminDashboardPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* 2. Mobile Customer Cards (Shown on mobile screens < 768px) */}
+                <div className="md:hidden divide-y divide-[#C9A45C]/15">
+                  {customersList.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-white/50">
+                      No customer accounts recorded yet.
+                    </div>
+                  ) : (
+                    customersList.map((c, idx) => (
+                      <div key={idx} className="p-4 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-bold text-sm text-white">{c.name}</h4>
+                            {c.phone && (
+                              <a href={`tel:${c.phone}`} className="text-xs text-[#DFC282] block font-mono hover:underline">
+                                {c.phone}
+                              </a>
+                            )}
+                            <span className="text-[11px] text-[#DCE5D5]/60 block">{c.email || 'No email registered'}</span>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-[#DFC282] font-mono font-bold shrink-0">
+                            {c.ordersCount} order(s)
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-white/5 text-xs">
+                          <span className="text-[#DCE5D5]/70">Last Order: <strong className="text-white">{c.lastOrder}</strong></span>
+                          <span className="font-bold text-sm text-[#DFC282]">₹{c.totalSpent}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1229,12 +1508,14 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Transactions Table */}
+              {/* Transactions Container (Desktop Table + Mobile Cards) */}
               <div className="bg-[#102C20] rounded-2xl border border-[#C9A45C]/30 overflow-hidden shadow">
                 <div className="p-4 border-b border-[#C9A45C]/20">
                   <h3 className="font-serif font-bold text-base text-white">Payment Transactions Log</h3>
                 </div>
-                <div className="overflow-x-auto">
+
+                {/* 1. Desktop & Tablet Table (Hidden on Mobile) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#0A1B13] text-[#DFC282] uppercase text-[10px] tracking-wider border-b border-[#C9A45C]/20">
                       <tr>
@@ -1252,7 +1533,7 @@ export default function AdminDashboardPage() {
                           <td colSpan="6" className="p-8 text-center text-white/50">
                             <CreditCard className="w-8 h-8 mx-auto mb-2 text-[#C9A45C]/40" />
                             <p className="text-white font-semibold">No payment transactions recorded yet</p>
-                            <span className="text-[#DCE5D5]/60 text-[11px]">Captured Razorpay online payments will automatically be logged here.</span>
+                            <span className="text-[#DCE5D5]/60 text-[11px]">Captured online payments will automatically be logged here.</span>
                           </td>
                         </tr>
                       ) : (
@@ -1261,7 +1542,7 @@ export default function AdminDashboardPage() {
                             <td className="p-4 font-mono text-[11px] text-[#DCE5D5]/70">TXN-{o.orderId.replace('VAGVAT-', '')}</td>
                             <td className="p-4 font-mono font-bold text-[#DFC282]">{o.orderId}</td>
                             <td className="p-4 text-white font-medium">{o.customerName}</td>
-                            <td className="p-4 text-[#DCE5D5]/80">{o.paymentMethod || 'Online Payment (Razorpay)'}</td>
+                            <td className="p-4 text-[#DCE5D5]/80">{o.paymentMethod || 'Online Payment'}</td>
                             <td className="p-4 font-bold text-white">₹{o.total}</td>
                             <td className="p-4">
                               <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-400">
@@ -1273,6 +1554,36 @@ export default function AdminDashboardPage() {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* 2. Mobile Transaction Cards (Shown on mobile screens < 768px) */}
+                <div className="md:hidden divide-y divide-[#C9A45C]/15">
+                  {orders.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-white/50">
+                      No payment transactions recorded yet.
+                    </div>
+                  ) : (
+                    orders.map((o) => (
+                      <div key={o.orderId} className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs text-[#DCE5D5]/70">TXN-{o.orderId.replace('VAGVAT-', '')}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-400">
+                            Captured
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-mono font-bold text-xs text-[#DFC282] block">{o.orderId}</span>
+                            <span className="text-white font-medium text-xs block">{o.customerName}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-sm text-white block">₹{o.total}</span>
+                            <span className="text-[10px] text-[#DCE5D5]/60 block">{o.paymentMethod || 'Online Payment'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

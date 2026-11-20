@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import AnnouncementBar from './components/AnnouncementBar';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -26,7 +26,10 @@ import DoshaQuizModal from './components/DoshaQuizModal';
 import AuthModal from './components/AuthModal';
 import { Sparkles, CalendarCheck } from 'lucide-react';
 
-export default function App() {
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   // Persist cart items in localStorage
   const [cart, setCart] = useState(() => {
     try {
@@ -90,6 +93,7 @@ export default function App() {
 
   const handleProceedToCheckout = (data) => {
     setCheckoutData(data);
+    setIsCartOpen(false);
     setIsCheckoutOpen(true);
   };
 
@@ -120,165 +124,167 @@ export default function App() {
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        <div className="min-h-screen bg-[#F7F0DF] text-[#263629] font-sans flex flex-col relative selection:bg-[#C9A45C]/30 selection:text-[#173D2B]">
-          
-          {/* Top Announcement Bar */}
-          <AnnouncementBar />
+    <div className={`min-h-screen ${isAdminRoute ? 'bg-[#07130D]' : 'bg-[#F7F0DF]'} text-[#263629] font-sans flex flex-col relative selection:bg-[#C9A45C]/30 selection:text-[#173D2B] overflow-x-hidden`}>
+      <ScrollToTop />
+      
+      {/* Top Announcement Bar (Hidden on Admin Portal) */}
+      {!isAdminRoute && <AnnouncementBar />}
 
-          {/* Primary Navbar */}
-          <Navbar
-            cartCount={totalCartCount}
-            onOpenCart={() => setIsCartOpen(true)}
-            onOpenSearch={() => setIsSearchOpen(true)}
-            onOpenAuth={() => setIsAuthModalOpen(true)}
+      {/* Primary Navbar (Hidden on Admin Portal) */}
+      {!isAdminRoute && (
+        <Navbar
+          cartCount={totalCartCount}
+          onOpenCart={() => setIsCartOpen(true)}
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+        />
+      )}
+
+      {/* Multi-Page Routes */}
+      <main className="flex-1 flex flex-col min-w-0">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <HomePage
+                onSelectProduct={(p) => setSelectedProduct(p)}
+                onAddToCart={handleAddToCart}
+                onOpenDoshaQuiz={() => setIsDoshaQuizOpen(true)}
+              />
+            }
           />
 
-          {/* Multi-Page Routes */}
-          <main className="flex-1">
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <HomePage
-                    onSelectProduct={(p) => setSelectedProduct(p)}
-                    onAddToCart={handleAddToCart}
-                    onOpenDoshaQuiz={() => setIsDoshaQuizOpen(true)}
-                  />
-                }
+          <Route
+            path="/shop"
+            element={
+              <ShopPage
+                onSelectProduct={(p) => setSelectedProduct(p)}
+                onAddToCart={handleAddToCart}
               />
+            }
+          />
 
-              <Route
-                path="/shop"
-                element={
-                  <ShopPage
-                    onSelectProduct={(p) => setSelectedProduct(p)}
-                    onAddToCart={handleAddToCart}
-                  />
-                }
-              />
+          {/* Dedicated Brand Story Page */}
+          <Route
+            path="/story"
+            element={<StoryPage />}
+          />
 
-              {/* Dedicated Brand Story Page */}
-              <Route
-                path="/story"
-                element={<StoryPage />}
-              />
+          {/* Dedicated Why Choose Us Page */}
+          <Route
+            path="/why-us"
+            element={<WhyChooseUsPage />}
+          />
 
-              {/* Dedicated Why Choose Us Page */}
-              <Route
-                path="/why-us"
-                element={<WhyChooseUsPage />}
-              />
+          {/* Dedicated Reviews Page */}
+          <Route
+            path="/reviews"
+            element={<ReviewsPage />}
+          />
 
-              {/* Dedicated Reviews Page */}
-              <Route
-                path="/reviews"
-                element={<ReviewsPage />}
-              />
+          {/* Dedicated Contact & Vaidya Consultation Page */}
+          <Route
+            path="/contact"
+            element={<ContactPage />}
+          />
 
-              {/* Dedicated Contact & Vaidya Consultation Page */}
-              <Route
-                path="/contact"
-                element={<ContactPage />}
-              />
+          {/* Dedicated Compact Login & Admin Portal Page */}
+          <Route
+            path="/login"
+            element={<LoginPage />}
+          />
 
-              {/* Dedicated Compact Login & Admin Portal Page */}
-              <Route
-                path="/login"
-                element={<LoginPage />}
-              />
+          {/* Protected Customer Account Dashboard */}
+          <Route
+            path="/account"
+            element={
+              <CustomerRoute>
+                <CustomerAccountPage />
+              </CustomerRoute>
+            }
+          />
 
-              {/* Protected Customer Account Dashboard */}
-              <Route
-                path="/account"
-                element={
-                  <CustomerRoute>
-                    <CustomerAccountPage />
-                  </CustomerRoute>
-                }
-              />
+          {/* Protected Admin Portal Dashboard */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboardPage />
+              </AdminRoute>
+            }
+          />
 
-              {/* Protected Admin Portal Dashboard */}
-              <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
-                    <AdminDashboardPage />
-                  </AdminRoute>
-                }
-              />
+          {/* Friendly Aliases */}
+          <Route path="/dashboard" element={<Navigate to="/account" replace />} />
+          <Route path="/portal" element={<Navigate to="/login" replace />} />
 
-              {/* Friendly Aliases */}
-              <Route path="/dashboard" element={<Navigate to="/account" replace />} />
-              <Route path="/portal" element={<Navigate to="/login" replace />} />
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
+      {/* Global Footer with All Links (Hidden on Admin Portal) */}
+      {!isAdminRoute && <Footer />}
 
-        {/* Global Footer with All Links */}
-        <Footer />
+      {/* Shopping Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveFromCart}
+        onProceedToCheckout={handleProceedToCheckout}
+      />
 
-        {/* Shopping Cart Drawer */}
-        <CartDrawer
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          cartItems={cart}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveFromCart}
-          onProceedToCheckout={handleProceedToCheckout}
-        />
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+      />
 
-        {/* Product Detail Modal */}
-        <ProductDetailModal
-          product={selectedProduct}
-          isOpen={!!selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAddToCart={handleAddToCart}
-          onBuyNow={handleBuyNow}
-        />
+      {/* Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cartItems={cart}
+        checkoutData={checkoutData}
+        onOrderCompleted={handleOrderCompleted}
+      />
 
-        {/* Checkout Modal */}
-        <CheckoutModal
-          isOpen={isCheckoutOpen}
-          onClose={() => setIsCheckoutOpen(false)}
-          cartItems={cart}
-          checkoutData={checkoutData}
-          onOrderCompleted={handleOrderCompleted}
-        />
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectProduct={(p) => setSelectedProduct(p)}
+      />
 
-        {/* Search Modal */}
-        <SearchModal
-          isOpen={isSearchOpen}
-          onClose={() => setIsSearchOpen(false)}
-          onSelectProduct={(p) => setSelectedProduct(p)}
-        />
+      {/* Dosha Quiz Guide Modal */}
+      <DoshaQuizModal
+        isOpen={isDoshaQuizOpen}
+        onClose={() => setIsDoshaQuizOpen(false)}
+        onSelectProduct={(p) => setSelectedProduct(p)}
+      />
 
-        {/* Dosha Quiz Guide Modal */}
-        <DoshaQuizModal
-          isOpen={isDoshaQuizOpen}
-          onClose={() => setIsDoshaQuizOpen(false)}
-          onSelectProduct={(p) => setSelectedProduct(p)}
-        />
+      {/* Customer / Admin Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={() => {}}
+      />
 
-        {/* Customer & Discreet Admin Auth Pop-Up Modal */}
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-        />
+      {/* Notification Toast */}
+      {toast && (
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-lg bg-[#102C20] text-[#F7F0DF] border border-[#C9A45C] shadow-2xl flex items-center space-x-2 text-xs font-medium animate-fadeIn">
+          <Sparkles className="w-4 h-4 text-[#C9A45C]" />
+          <span>{toast}</span>
+        </div>
+      )}
 
-        {/* Toast Notification */}
-        {toast && (
-          <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-lg bg-[#102C20] text-[#F7F0DF] border border-[#C9A45C] shadow-2xl flex items-center space-x-2 text-xs font-medium animate-fadeIn">
-            <Sparkles className="w-4 h-4 text-[#C9A45C]" />
-            <span>{toast}</span>
-          </div>
-        )}
-
-        {/* Floating "Book Consultancy" Button (replaces old Vaidya Support dialer) */}
+      {/* Floating "Book Consultancy" Button (Hidden on Admin Portal) */}
+      {!isAdminRoute && (
         <Link
           to="/contact"
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-[#102C20] to-[#173D2B] text-[#DFC282] hover:text-[#FFFFFF] border border-[#C9A45C]/70 shadow-2xl px-4 py-2.5 sm:px-5 sm:py-3 rounded-full flex items-center space-x-2.5 text-xs sm:text-sm font-semibold uppercase tracking-wider backdrop-blur-md hover:bg-[#102C20] transition-all hover:scale-105 hover:shadow-[0_0_25px_rgba(201,164,92,0.5)] group"
@@ -291,9 +297,17 @@ export default function App() {
           <CalendarCheck className="w-4 h-4 text-[#C9A45C] group-hover:scale-110 transition-transform" />
           <span className="font-serif font-bold">Book Consultancy</span>
         </Link>
+      )}
+    </div>
+  );
+}
 
-      </div>
-    </Router>
-  </AuthProvider>
-);
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
 }

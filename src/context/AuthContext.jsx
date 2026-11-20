@@ -13,12 +13,10 @@ import { auth, googleProvider, db } from '../firebase';
 
 const AuthContext = createContext(null);
 
-export const MASTER_ADMIN_CREDENTIALS = {
+export const ADMIN_CONFIG = {
+  uid: 'fOZcyquhHTUJJA7o5xiz4d7vBoB3',
   email: 'sachin@gmail.com',
-  password: 'sachinjammu',
-  displayName: 'Vaidya Sachin (Administrator)',
-  role: 'admin',
-  uid: 'admin_sachin_jammu_vagvat'
+  username: 'sachin'
 };
 
 export function useAuth() {
@@ -41,8 +39,8 @@ export function AuthProvider({ children }) {
       return null;
     }
 
-    // 0. Immediate recognition for master administrator
-    if (user.email && user.email.trim().toLowerCase() === MASTER_ADMIN_CREDENTIALS.email) {
+    // 0. Immediate recognition for Vaidya administrator
+    if (user.uid === ADMIN_CONFIG.uid || (user.email && user.email.trim().toLowerCase() === ADMIN_CONFIG.email)) {
       setUserRole('admin');
       try {
         localStorage.setItem(`vagvat_role_${user.uid}`, 'admin');
@@ -87,19 +85,6 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    // Check if an active master admin session exists in localStorage
-    try {
-      const storedAdminSession = localStorage.getItem('vagvat_admin_active_session');
-      if (storedAdminSession) {
-        const parsed = JSON.parse(storedAdminSession);
-        if (parsed?.email?.toLowerCase() === MASTER_ADMIN_CREDENTIALS.email) {
-          setCurrentUser(parsed);
-          setUserRole('admin');
-          setLoading(false);
-        }
-      }
-    } catch {}
-
     if (!auth) {
       setLoading(false);
       return;
@@ -108,7 +93,7 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        if (user.email?.toLowerCase() === MASTER_ADMIN_CREDENTIALS.email) {
+        if (user.uid === ADMIN_CONFIG.uid || user.email?.toLowerCase() === ADMIN_CONFIG.email) {
           setUserRole('admin');
           try {
             localStorage.setItem(`vagvat_role_${user.uid}`, 'admin');
@@ -117,19 +102,6 @@ export function AuthProvider({ children }) {
           await resolveRole(user);
         }
       } else {
-        // If not authenticated via Firebase, check if active local master admin session exists
-        try {
-          const stored = localStorage.getItem('vagvat_admin_active_session');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (parsed?.email?.toLowerCase() === MASTER_ADMIN_CREDENTIALS.email) {
-              setCurrentUser(parsed);
-              setUserRole('admin');
-              setLoading(false);
-              return;
-            }
-          }
-        } catch {}
         setCurrentUser(null);
         setUserRole(null);
       }
@@ -141,14 +113,14 @@ export function AuthProvider({ children }) {
 
   // Customer Login
   const loginCustomer = async (email, password) => {
-    const normEmail = (email || '').trim().toLowerCase();
-    // If master admin logs in through customer form, grant administrative clearance directly
-    if (normEmail === MASTER_ADMIN_CREDENTIALS.email && password === MASTER_ADMIN_CREDENTIALS.password) {
-      return loginAdmin(email, password);
-    }
-
     if (!auth) throw new Error('Authentication service currently unavailable.');
-    const cred = await signInWithEmailAndPassword(auth, email, password);
+
+    const clean = (email || '').trim().toLowerCase();
+    const targetEmail = (clean === ADMIN_CONFIG.username || clean === ADMIN_CONFIG.email)
+      ? ADMIN_CONFIG.email
+      : clean;
+
+    const cred = await signInWithEmailAndPassword(auth, targetEmail, password);
     const role = await resolveRole(cred.user);
     return { user: cred.user, role };
   };
@@ -215,67 +187,34 @@ export function AuthProvider({ children }) {
     return { user: cred.user, role };
   };
 
-  // Admin Login with Strict Role Verification
-  const loginAdmin = async (email, password) => {
-    const normEmail = (email || '').trim().toLowerCase();
-    const isMasterAdmin = normEmail === MASTER_ADMIN_CREDENTIALS.email && password === MASTER_ADMIN_CREDENTIALS.password;
-
-    if (isMasterAdmin) {
-      const masterAdminUser = {
-        uid: MASTER_ADMIN_CREDENTIALS.uid,
-        email: MASTER_ADMIN_CREDENTIALS.email,
-        displayName: MASTER_ADMIN_CREDENTIALS.displayName,
-        role: 'admin'
-      };
-
-      // Set admin state and cache immediately so admin login is instant and never blocked
-      setCurrentUser(masterAdminUser);
-      setUserRole('admin');
-
-      try {
-        localStorage.setItem(`vagvat_role_${masterAdminUser.uid}`, 'admin');
-        localStorage.setItem(`vagvat_role_${MASTER_ADMIN_CREDENTIALS.uid}`, 'admin');
-        localStorage.setItem('vagvat_admin_active_session', JSON.stringify(masterAdminUser));
-      } catch {}
-
-      // Optional non-blocking Firebase background sync (safely ignore if Email/Password provider is disabled)
-      if (auth) {
-        signInWithEmailAndPassword(auth, MASTER_ADMIN_CREDENTIALS.email, MASTER_ADMIN_CREDENTIALS.password)
-          .then(async (cred) => {
-            if (db) {
-              await setDoc(doc(db, 'users', cred.user.uid), {
-                uid: cred.user.uid,
-                email: MASTER_ADMIN_CREDENTIALS.email,
-                displayName: MASTER_ADMIN_CREDENTIALS.displayName,
-                role: 'admin',
-                updatedAt: serverTimestamp()
-              }, { merge: true });
-            }
-          })
-          .catch(() => {
-            // Silently swallow any Firebase provider disabled / network errors for master admin
-          });
-      }
-
-      return masterAdminUser;
-    }
-
-    if (normEmail === MASTER_ADMIN_CREDENTIALS.email && password !== MASTER_ADMIN_CREDENTIALS.password) {
-      throw new Error('Invalid administrative password for sachin@gmail.com. Access denied.');
-    }
-
+  // Admin Login with Firebase Authentication & UID Verification
+  const loginAdmin = async (identifier, password) => {
     if (!auth) throw new Error('Authentication service currently unavailable.');
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    const role = await resolveRole(cred.user);
 
-    if (role !== 'admin') {
-      const isDesignatedAdmin = localStorage.getItem(`vagvat_role_${cred.user.uid}`) === 'admin';
-      if (!isDesignatedAdmin) {
-        throw new Error('Access Denied: This account does not possess Vaidya/Dispensary Administrator privileges.');
-      }
+    const clean = (identifier || '').trim().toLowerCase();
+    const targetEmail = (clean === ADMIN_CONFIG.username || clean === ADMIN_CONFIG.email)
+      ? ADMIN_CONFIG.email
+      : clean;
+
+    const cred = await signInWithEmailAndPassword(auth, targetEmail, password);
+
+    // Strictly enforce Firebase Admin UID
+    if (cred.user.uid !== ADMIN_CONFIG.uid) {
+      await signOut(auth);
+      throw new Error('Access Denied: This account does not possess Vaidya/Dispensary Administrator privileges.');
     }
 
     setUserRole('admin');
+    try {
+      localStorage.setItem(`vagvat_role_${cred.user.uid}`, 'admin');
+      localStorage.setItem('vagvat_admin_active_session', JSON.stringify({
+        uid: cred.user.uid,
+        email: cred.user.email,
+        displayName: cred.user.displayName || 'Vaidya Sachin (Administrator)',
+        role: 'admin'
+      }));
+    } catch {}
+
     return cred.user;
   };
 

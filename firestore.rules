@@ -2,39 +2,33 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Check if the authenticated user has administrative clearance
+    // Check if the authenticated user is the designated Vaidya administrator
     function isAdmin() {
-      return request.auth != null && (
-        request.auth.token.email == 'sachin@gmail.com' ||
-        request.auth.uid == 'admin_sachin_jammu_vagvat' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
-      );
+      return request.auth != null && request.auth.uid == 'fOZcyquhHTUJJA7o5xiz4d7vBoB3';
     }
 
     // Orders Collection: Central synchronized order collection
     match /orders/{orderId} {
       // 1. Customers can create orders during checkout
       allow create: if request.resource.data.orderId != null
-                    && request.resource.data.customerName != null
+                    && request.resource.data.customerName is string
                     && request.resource.data.total is number;
 
-      // 2. Customers can only read their own orders; Admins can read all orders
+      // 2. Customers can only read their own orders; Admin can read all orders
       allow read: if isAdmin() || (
         request.auth != null && (
-          resource.data.userId == request.auth.uid ||
+          (resource.data.userId != null && resource.data.userId == request.auth.uid) ||
           (request.auth.token.email != null && resource.data.customerEmail == request.auth.token.email)
         )
       );
 
-      // 3. Only authenticated admins can update order status or delete orders
+      // 3. Only the authenticated admin can update order status or delete orders
       allow update, delete: if isAdmin();
     }
 
     // Users Collection: Customer & Admin profiles
     match /users/{userId} {
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
   }
 }

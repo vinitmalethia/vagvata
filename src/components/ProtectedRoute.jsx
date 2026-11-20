@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, ADMIN_CONFIG } from '../context/AuthContext';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -37,11 +37,13 @@ export function AdminRoute({ children }) {
     );
   }
 
+  const ADMIN_UID = ADMIN_CONFIG?.uid || 'fOZcyquhHTUJJA7o5xiz4d7vBoB3';
+
   if (!currentUser) {
     return <Navigate to="/login" state={{ from: location, tab: 'admin' }} replace />;
   }
 
-  if (userRole !== 'admin') {
+  if (currentUser.uid !== ADMIN_UID || userRole !== 'admin') {
     return (
       <div className="min-h-screen bg-[#0D241A] text-[#F7F0DF] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-[#102C20] border-2 border-red-500/40 rounded-2xl p-8 text-center space-y-4 shadow-2xl">
