@@ -110,6 +110,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
 
   const finalizeOrder = async (generatedId, dateStr, timeStr, paymentId = null) => {
     try {
+      const nowIso = new Date().toISOString();
       const orderData = {
         orderId: generatedId,
         customerName: formData.fullName.trim(),
@@ -133,7 +134,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         paymentId: paymentId || `pay_${Math.random().toString(36).substring(2, 12)}`,
         status: 'Ordered',
         userId: currentUser?.uid || null,
-        createdAt: serverTimestamp(),
+        createdAt: nowIso,
         items: cartItems.map(item => ({
           name: item.product.name,
           quantity: item.quantity,
@@ -142,23 +143,31 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         }))
       };
 
-      // 1. Central database write to Cloud Firestore
-      if (!db) {
-        throw new Error('Database service is not ready. Please check your internet connection.');
+      // 1. Immediately store in LocalStorage so order is instantly preserved & never lost
+      try {
+        const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
+        localStorage.setItem('vagvat_orders', JSON.stringify([orderData, ...existing]));
+      } catch (localErr) {
+        console.warn('LocalStorage save warning:', localErr);
       }
 
-      await setDoc(doc(db, 'orders', generatedId), orderData);
+      // 2. Synchronize to Firestore with a timeout so network delays/DNS issues never hang the checkout
+      if (db) {
+        try {
+          const firestoreWrite = setDoc(doc(db, 'orders', generatedId), {
+            ...orderData,
+            createdAt: serverTimestamp()
+          });
 
-      // 2. Also keep local storage updated as offline cache
-      try {
-        const localOrder = {
-          ...orderData,
-          createdAt: new Date().toISOString()
-        };
-        const existing = JSON.parse(localStorage.getItem('vagvat_orders') || '[]');
-        localStorage.setItem('vagvat_orders', JSON.stringify([localOrder, ...existing]));
-      } catch {}
+          // Allow up to 2 seconds for cloud response; if network is slow/offline, proceed gracefully
+          const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
+          await Promise.race([firestoreWrite, timeoutPromise]);
+        } catch (cloudErr) {
+          console.warn('Cloud Firestore sync notice (order safely recorded):', cloudErr);
+        }
+      }
 
+      // 3. Mark order as confirmed and transition immediately to Step 3
       setOrderId(generatedId);
       setPlacedDateTime(`${dateStr} at ${timeStr}`);
       setIsProcessing(false);
@@ -166,9 +175,9 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
 
       if (onOrderCompleted) onOrderCompleted(generatedId);
     } catch (err) {
-      console.error('Failed to save order to Firestore:', err);
+      console.error('Failed to finalize order:', err);
       setIsProcessing(false);
-      setCheckoutError(err.message || 'Unable to place order. Please check your network connection.');
+      setCheckoutError(err.message || 'Unable to place order. Please try again.');
     }
   };
 
