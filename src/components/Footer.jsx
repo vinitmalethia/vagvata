@@ -52,7 +52,7 @@ export default function Footer() {
             <Link to="/" className="flex items-center space-x-3.5 group">
               <img 
                 src="/images/logo.jpg" 
-                alt="Vagvat Agrovet Emblem" 
+                alt="Vagvat Ayurveda Emblem" 
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border border-[#C9A45C]/70 shadow-md group-hover:scale-105 transition-transform duration-300"
               />
               <div>
@@ -60,7 +60,7 @@ export default function Footer() {
                   VAGVAT
                 </span>
                 <span className="block text-[9px] sm:text-[10px] tracking-[0.35em] text-[#DFC282] uppercase font-medium mt-1">
-                  — AGROVET —
+                  — AYURVEDA —
                 </span>
               </div>
             </Link>
@@ -239,7 +239,7 @@ export default function Footer() {
 
           {/* Center: Copyright */}
           <p className="text-xs text-[#DCE5D5]/65">
-            © 2025 Vagvat Agrovet. All rights reserved.
+            © 2025 Vagvat Ayurveda. All rights reserved.
           </p>
 
           {/* Right: Crafted with heart */}
