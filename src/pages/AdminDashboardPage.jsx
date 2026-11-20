@@ -182,11 +182,17 @@ export default function AdminDashboardPage() {
     try {
       const storedInv = localStorage.getItem('vagvat_inventory');
       if (storedInv) {
-        setInventory(JSON.parse(storedInv));
+        const parsed = JSON.parse(storedInv);
+        const synced = parsed.map(item => {
+          const fresh = PRODUCTS.find(p => p.id === item.id);
+          return fresh ? { ...fresh, stockCount: item.stockCount, inStock: item.inStock } : item;
+        });
+        setInventory(synced);
+        localStorage.setItem('vagvat_inventory', JSON.stringify(synced));
       } else {
         const initialInv = PRODUCTS.map((p, idx) => ({
           ...p,
-          stockCount: [28, 14, 45, 30, 18, 60, 35, 40, 22, 50, 32][idx] || 25,
+          stockCount: [28, 14, 45, 30, 18, 60, 35, 40, 22, 50, 32, 25, 40][idx] || 25,
           inStock: true
         }));
         setInventory(initialInv);
