@@ -575,7 +575,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'customer' })
                       required
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      placeholder="sachin@gmail.com"
+                      placeholder="Enter admin email"
                       className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#C9A45C]/40 bg-[#0D241A] text-xs text-[#F7F0DF] placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#C9A45C]"
                     />
                   </div>
