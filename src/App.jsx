@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import AnnouncementBar from './components/AnnouncementBar';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -24,7 +24,7 @@ import CheckoutModal from './components/CheckoutModal';
 import SearchModal from './components/SearchModal';
 import DoshaQuizModal from './components/DoshaQuizModal';
 import AuthModal from './components/AuthModal';
-import { Sparkles, Phone } from 'lucide-react';
+import { Sparkles, CalendarCheck } from 'lucide-react';
 
 export default function App() {
   // Persist cart items in localStorage
@@ -278,16 +278,19 @@ export default function App() {
           </div>
         )}
 
-        {/* Floating Helpline Dialer */}
-        <a
-          href="tel:+918059507909"
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 bg-[#173D2B]/95 text-[#DFC282] hover:text-white border border-[#C9A45C]/60 shadow-2xl px-3 py-2 sm:px-4 sm:py-2.5 rounded-full flex items-center space-x-1.5 sm:space-x-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wider backdrop-blur-md hover:bg-[#102C20] transition-all group"
-          title="Consult with our Vaidya"
+        {/* Floating "Book Consultancy" Button (replaces old Vaidya Support dialer) */}
+        <Link
+          to="/contact"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-[#102C20] to-[#173D2B] text-[#DFC282] hover:text-[#FFFFFF] border border-[#C9A45C]/70 shadow-2xl px-4 py-2.5 sm:px-5 sm:py-3 rounded-full flex items-center space-x-2.5 text-xs sm:text-sm font-semibold uppercase tracking-wider backdrop-blur-md hover:bg-[#102C20] transition-all hover:scale-105 hover:shadow-[0_0_25px_rgba(201,164,92,0.5)] group"
+          title="Book an Ayurvedic Consultation with our Vaidya"
         >
-          <Phone className="w-3.5 h-3.5 text-[#C9A45C] group-hover:scale-110 transition-transform" />
-          <span className="hidden sm:inline">Vaidya Support:</span>
-          <span>+91 80595 07909</span>
-        </a>
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C9A45C] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C9A45C]"></span>
+          </span>
+          <CalendarCheck className="w-4 h-4 text-[#C9A45C] group-hover:scale-110 transition-transform" />
+          <span className="font-serif font-bold">Book Consultancy</span>
+        </Link>
 
       </div>
     </Router>

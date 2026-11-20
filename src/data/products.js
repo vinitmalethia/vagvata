@@ -656,6 +656,130 @@ export const PRODUCTS = [
     ],
     usage: 'Take 1 to 2 capsules twice daily after meals with lukewarm water.',
     inStock: true
+  },
+
+  // 12. AGNISIP (Herbal Digestive Tea)
+  {
+    id: 'agnisip-tea',
+    slug: 'agnisip-tea',
+    name: 'Agnisip Herbal Digestive Tea',
+    hindiName: 'अग्निसिप हर्बल पाचक चाय',
+    subtitle: 'Gut Health. Better You. Naturally',
+    tagline: 'पाचन अग्नि प्रदीपक • शुद्ध हर्बल टी (Ignites Digestive Agni)',
+    category: 'Digestive Wellness',
+    packageColor: '#B8860B',
+    packageColorName: 'Imperial Black & Matte Gold',
+    colorHex: '#B8860B',
+    image: '/images/products/agnisip.jpg',
+    price: 499,
+    originalPrice: 699,
+    rating: 4.9,
+    reviewCount: 318,
+    badge: 'Herbal Infusion',
+    capsuleCount: '20 Pyramid Tea Bags',
+    strength: '20 Pyramid Bags',
+    volume: '20 Pyramid Tea Bags • Whole Leaf Infusion',
+    dosha: 'Samana Vata & Pachaka Pitta Balancer',
+    description:
+      'Agnisip is a classical digestive wellness infusion crafted with potent botanical herbs and spices to rekindle your digestive fire (Agni). Featuring 20 pyramid tea bags for maximum herbal extraction, it alleviates bloating, eases post-meal heaviness, supports gut microbiome balance, and promotes complete nutrient assimilation naturally.',
+    boxFeatures: [
+      '20 Pyramid Tea Bags (Max Infusion)',
+      'Gut Health. Better You. Naturally',
+      'Relieves Gas, Bloating & Acidity',
+      '100% Herbal • Zero Caffeine & Preservatives'
+    ],
+    highlights: [
+      'Stimulates sluggish Pachaka Pitta & digestive enzymes without causing burning sensation',
+      'Pyramid tea bag technology allows whole botanicals to unfurl and release bio-actives fully',
+      'Soothes abdominal cramping, indigestion, and gas after rich meals',
+      'Pure Ayurvedic botanical blend; gentle on stomach for daily consumption'
+    ],
+    keyIngredients: [
+      {
+        name: 'Saunf (Fennel Seeds)',
+        botanical: 'Foeniculum vulgare',
+        role: 'Calms gastrointestinal spasms and dispels intestinal gas'
+      },
+      {
+        name: 'Ajwain (Carom Seeds)',
+        botanical: 'Trachyspermum ammi',
+        role: 'Ignites Jatharagni and provides rapid relief from colic and flatulence'
+      },
+      {
+        name: 'Jeera (Cumin)',
+        botanical: 'Cuminum cyminum',
+        role: 'Stimulates bile secretion and optimizes nutrient assimilation'
+      },
+      {
+        name: 'Sunthi (Dry Ginger)',
+        botanical: 'Zingiber officinale',
+        role: 'Deepens metabolic fire (Dipana-Pachana) and clears metabolic endotoxins (Ama)'
+      }
+    ],
+    usage: 'Dip 1 pyramid tea bag in a cup (150-200ml) of freshly boiled water for 3-5 minutes. Enjoy warm 15-30 minutes after lunch or dinner.',
+    inStock: true
+  },
+
+  // 13. Vitonex Tablets (Multivitamin & Multimineral)
+  {
+    id: 'vitonex-tablets',
+    slug: 'vitonex-tablets',
+    name: 'Vitonex Tablets (Multivitamin & Multimineral)',
+    hindiName: 'विटोनेक्स मल्टीविटामिन एवं मल्टीमिनरल',
+    subtitle: 'Multivitamin & Multimineral Tablets for Daily Vitality',
+    tagline: 'ऊर्जा • रोग प्रतिरोधक क्षमता • स्वास्थ्य (Energy • Immunity • Wellness)',
+    category: 'Strength & Stamina',
+    packageColor: '#1A365D',
+    packageColorName: 'Ocean Navy & Gold',
+    colorHex: '#1A365D',
+    image: '/images/products/vitonex.jpg',
+    price: 449,
+    originalPrice: 537,
+    rating: 4.9,
+    reviewCount: 412,
+    badge: 'Daily Spectrum',
+    capsuleCount: '30 Tablets',
+    strength: '30 Tablets Pack',
+    volume: '30 Tablets • Complete Daily Spectrum',
+    dosha: 'Tridosha Balance & Cellular Rejuvenation',
+    description:
+      'Vitonex Tablets deliver a comprehensive spectrum of essential daily multivitamins and multiminerals engineered to power active lifestyles, athletes, and daily wellness. Manufactured in WHO-GMP certified facilities, it fortifies immune defenses, enhances physical energy and brain function, supports bone density, and nourishes hair, skin, and nails.',
+    boxFeatures: [
+      '30 Multivitamin & Multimineral Tablets',
+      'Supports Immunity & Cellular Energy',
+      'Brain Function, Bone Health & Stamina',
+      'Supports Hair, Skin & Nails'
+    ],
+    highlights: [
+      'Complete nutritional coverage to bridge daily dietary micronutrient gaps',
+      'Supports mitochondrial energy synthesis to combat chronic daytime fatigue',
+      'Fortifies natural immune resilience against environmental stressors',
+      'WHO-GMP & ISO 9001:2015 certified pharmaceutical grade formulation'
+    ],
+    keyIngredients: [
+      {
+        name: 'Essential Vitamin Complex (A, B-Complex, C, D3, E)',
+        botanical: 'Pharmaceutical Grade Nutrients',
+        role: 'Catalyzes metabolic cellular energy and strengthens innate immunity'
+      },
+      {
+        name: 'Zinc & Selenium',
+        botanical: 'Bio-chelated Minerals',
+        role: 'Potent cellular antioxidants that support tissue repair and hormonal balance'
+      },
+      {
+        name: 'Iron & Folic Acid',
+        botanical: 'Hemoglobin Support Matrix',
+        role: 'Boosts red blood cell count and enhances oxygen delivery to muscles and brain'
+      },
+      {
+        name: 'Calcium & Magnesium',
+        botanical: 'Bone & Muscle Complex',
+        role: 'Maintains bone mineral density, nerve signaling, and muscle contraction'
+      }
+    ],
+    usage: 'Take 1 tablet daily with water, preferably after breakfast or lunch.',
+    inStock: true
   }
 ];
 
