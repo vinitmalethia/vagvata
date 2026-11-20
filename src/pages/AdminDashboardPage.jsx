@@ -468,7 +468,7 @@ export default function AdminDashboardPage() {
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
             <div className="truncate text-xs min-w-0">
               <span className="text-[#DFC282] font-semibold block truncate">Vaidya Sachin</span>
-              <span className="text-[11px] text-[#DCE5D5]/60 font-mono block truncate">{currentUser?.email || 'sachin@gmail.com'}</span>
+              <span className="text-[11px] text-[#DCE5D5]/60 font-mono block truncate">Administrator account</span>
             </div>
           </div>
 
@@ -1848,9 +1848,7 @@ export default function AdminDashboardPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-3 bg-black/20 rounded-xl border border-white/5">
                       <span className="text-[#DFC282] block">Admin Email Account</span>
-                      <span className="text-white font-mono font-bold text-sm block mt-0.5">
-                        {currentUser?.email || 'sachin@gmail.com'}
-                      </span>
+                      <span className="text-white font-mono font-bold text-sm block mt-0.5">Hidden for security</span>
                     </div>
 
                     <div className="p-3 bg-black/20 rounded-xl border border-white/5">
@@ -1864,8 +1862,7 @@ export default function AdminDashboardPage() {
                   <div className="p-3 bg-black/20 rounded-xl border border-white/5 space-y-1">
                     <span className="text-[#DFC282] font-semibold block">Security Clearance & Credentials:</span>
                     <p className="text-[#DCE5D5]/80 text-[11px]">
-                      Your designated administrative login is <strong className="text-white">sachin@gmail.com</strong>.
-                      Protected with 256-bit encryption and role-based route guards.
+                      Your designated administrative login is hidden for security. Protected with 256-bit encryption and role-based route guards.
                     </p>
                   </div>
 
