@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { ShoppingBag, Search, Menu, X, PhoneCall, User, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Navbar({ cartCount, onOpenCart, onOpenSearch }) {
+export default function Navbar({ cartCount, onOpenCart, onOpenSearch, onOpenAuth }) {
   const { currentUser, userRole } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -110,22 +110,31 @@ export default function Navbar({ cartCount, onOpenCart, onOpenSearch }) {
               <Search className="w-5 h-5" />
             </button>
 
-            {/* User / Admin Portal Link */}
-            <Link
-              to={currentUser ? (userRole === 'admin' ? '/admin' : '/account') : '/login'}
-              className="p-2 text-[#F7F0DF]/90 hover:text-[#C9A45C] transition-colors rounded-full hover:bg-white/5 relative flex items-center group cursor-pointer"
-              title={currentUser ? (userRole === 'admin' ? 'Admin Portal' : 'My Account') : 'Login & Admin Portal'}
-              aria-label="Account & Portal"
-            >
-              {userRole === 'admin' ? (
-                <ShieldCheck className="w-5 h-5 text-[#C9A45C]" />
-              ) : (
-                <User className="w-5 h-5" />
-              )}
-              {currentUser && (
+            {/* User Account / Login Popup Trigger */}
+            {currentUser ? (
+              <Link
+                to={userRole === 'admin' ? '/admin' : '/account'}
+                className="p-2 text-[#F7F0DF]/90 hover:text-[#C9A45C] transition-colors rounded-full hover:bg-white/5 relative flex items-center group cursor-pointer"
+                title={userRole === 'admin' ? 'Admin Portal Dashboard' : 'My Account & Orders'}
+                aria-label="Account & Orders"
+              >
+                {userRole === 'admin' ? (
+                  <ShieldCheck className="w-5 h-5 text-[#C9A45C]" />
+                ) : (
+                  <User className="w-5 h-5" />
+                )}
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#C9A45C]" />
-              )}
-            </Link>
+              </Link>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="p-2 text-[#F7F0DF]/90 hover:text-[#C9A45C] transition-colors rounded-full hover:bg-white/5 relative flex items-center group cursor-pointer"
+                title="Customer Sign In / Register"
+                aria-label="Sign In"
+              >
+                <User className="w-5 h-5" />
+              </button>
+            )}
 
             {/* Shopping Cart Drawer Trigger */}
             <button
@@ -195,22 +204,31 @@ export default function Navbar({ cartCount, onOpenCart, onOpenSearch }) {
                 </span>
               </button>
 
-              <Link
-                to={currentUser ? (userRole === 'admin' ? '/admin' : '/account') : '/login'}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center space-x-3 w-full py-2.5 px-4 rounded bg-white/10 text-[#F7F0DF] border border-[#C9A45C]/40 text-sm font-semibold"
-              >
-                {userRole === 'admin' ? (
-                  <ShieldCheck className="w-4 h-4 text-[#C9A45C]" />
-                ) : (
+              {currentUser ? (
+                <Link
+                  to={userRole === 'admin' ? '/admin' : '/account'}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-3 w-full py-2.5 px-4 rounded bg-white/10 text-[#F7F0DF] border border-[#C9A45C]/40 text-sm font-semibold"
+                >
+                  {userRole === 'admin' ? (
+                    <ShieldCheck className="w-4 h-4 text-[#C9A45C]" />
+                  ) : (
+                    <User className="w-4 h-4 text-[#C9A45C]" />
+                  )}
+                  <span>{userRole === 'admin' ? 'Admin Portal Dashboard' : 'My Account & Orders'}</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenAuth();
+                  }}
+                  className="flex items-center space-x-3 w-full py-2.5 px-4 rounded bg-white/10 text-[#F7F0DF] border border-[#C9A45C]/40 text-sm font-semibold cursor-pointer"
+                >
                   <User className="w-4 h-4 text-[#C9A45C]" />
-                )}
-                <span>
-                  {currentUser 
-                    ? (userRole === 'admin' ? 'Admin Portal Dashboard' : 'My Account & Orders') 
-                    : 'Customer Login / Admin Portal'}
-                </span>
-              </Link>
+                  <span>Customer Login / Register</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

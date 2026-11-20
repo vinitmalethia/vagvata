@@ -23,6 +23,7 @@ import ProductDetailModal from './components/ProductDetailModal';
 import CheckoutModal from './components/CheckoutModal';
 import SearchModal from './components/SearchModal';
 import DoshaQuizModal from './components/DoshaQuizModal';
+import AuthModal from './components/AuthModal';
 import { Sparkles, Phone } from 'lucide-react';
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
   const [checkoutData, setCheckoutData] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDoshaQuizOpen, setIsDoshaQuizOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Sync cart to localStorage whenever it changes
@@ -126,11 +128,12 @@ export default function App() {
           {/* Top Announcement Bar */}
           <AnnouncementBar />
 
-          {/* Primary Navbar (With "Our Story" removed as requested) */}
+          {/* Primary Navbar */}
           <Navbar
             cartCount={totalCartCount}
             onOpenCart={() => setIsCartOpen(true)}
             onOpenSearch={() => setIsSearchOpen(true)}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
           />
 
           {/* Multi-Page Routes */}
@@ -259,6 +262,12 @@ export default function App() {
           isOpen={isDoshaQuizOpen}
           onClose={() => setIsDoshaQuizOpen(false)}
           onSelectProduct={(p) => setSelectedProduct(p)}
+        />
+
+        {/* Customer & Discreet Admin Auth Pop-Up Modal */}
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
         />
 
         {/* Toast Notification */}
