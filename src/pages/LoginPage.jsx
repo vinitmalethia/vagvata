@@ -66,11 +66,9 @@ export default function LoginPage() {
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotError, setForgotError] = useState('');
 
-  // Admin Card State
-  const [adminMode, setAdminMode] = useState('login'); // 'login' | 'register'
+  // Admin Card State (Login only)
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [adminPassphrase, setAdminPassphrase] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminError, setAdminError] = useState('');
@@ -167,7 +165,7 @@ export default function LoginPage() {
     }
   };
 
-  // Handle Admin Form Submit
+  // Handle Admin Form Submit (Login only)
   const handleAdminSubmit = async (e) => {
     e.preventDefault();
     setAdminError('');
@@ -175,15 +173,9 @@ export default function LoginPage() {
     setAdminLoading(true);
 
     try {
-      if (adminMode === 'register') {
-        await registerAdmin(adminEmail, adminPassword, adminPassphrase);
-        setAdminSuccess('Admin credentials verified & authorized! Directing to Admin Portal...');
-        setTimeout(() => navigate('/admin'), 600);
-      } else {
-        await loginAdmin(adminEmail, adminPassword);
-        setAdminSuccess('Admin authenticated. Granting clearance...');
-        setTimeout(() => navigate('/admin'), 500);
-      }
+      await loginAdmin(adminEmail, adminPassword);
+      setAdminSuccess('Admin authenticated. Granting clearance...');
+      setTimeout(() => navigate('/admin'), 500);
     } catch (err) {
       let msg = err.message || 'Admin authentication failed.';
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
@@ -498,40 +490,6 @@ export default function LoginPage() {
                   </span>
                 </div>
               </div>
-
-              {/* Admin Mode Toggle */}
-              <div className="flex bg-[#0A1B13] p-0.5 rounded-full text-[10px] font-semibold border border-[#C9A45C]/30">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAdminMode('login');
-                    setAdminError('');
-                    setAdminSuccess('');
-                  }}
-                  className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
-                    adminMode === 'login' 
-                      ? 'bg-[#C9A45C] text-[#102C20] font-bold shadow-sm' 
-                      : 'text-[#DCE5D5]/70 hover:text-white'
-                  }`}
-                >
-                  Admin Login
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAdminMode('register');
-                    setAdminError('');
-                    setAdminSuccess('');
-                  }}
-                  className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
-                    adminMode === 'register' 
-                      ? 'bg-[#C9A45C] text-[#102C20] font-bold shadow-sm' 
-                      : 'text-[#DCE5D5]/70 hover:text-white'
-                  }`}
-                >
-                  Register
-                </button>
-              </div>
             </div>
 
             {/* Status Alerts */}
@@ -592,28 +550,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {adminMode === 'register' && (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-bold text-[#DFC282] uppercase tracking-wider">
-                      Dispensary Authorization Passphrase *
-                    </label>
-                    <span className="text-[10px] text-[#C9A45C] font-mono">Default: VAGVAT-ADMIN-2025</span>
-                  </div>
-                  <div className="relative">
-                    <KeyRound className="w-4 h-4 text-[#C9A45C] absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      value={adminPassphrase}
-                      onChange={(e) => setAdminPassphrase(e.target.value)}
-                      placeholder="Enter master authorization key"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#C9A45C]/40 bg-[#0D241A] text-xs text-[#F7F0DF] placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#C9A45C]"
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="p-2.5 rounded-xl bg-black/30 border border-[#C9A45C]/25 flex items-center space-x-2 text-[10px] text-[#DCE5D5]/80">
                 <Shield className="w-3.5 h-3.5 text-[#C9A45C] shrink-0" />
                 <span>Role-based 256-bit encrypted authentication. Protected admin routing enabled.</span>
@@ -629,7 +565,7 @@ export default function LoginPage() {
                 ) : (
                   <>
                     <Lock className="w-3.5 h-3.5" />
-                    <span>{adminMode === 'register' ? 'Authorize & Create Admin' : 'Secure Admin Login'}</span>
+                    <span>Secure Admin Login</span>
                   </>
                 )}
               </button>
