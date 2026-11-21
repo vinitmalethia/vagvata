@@ -10,11 +10,12 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../firebase';
+import { ADMIN_UID, isAdminUser } from '../auth/adminAuthorization';
 
 const AuthContext = createContext(null);
 
 export const ADMIN_CONFIG = {
-  uid: 'fOZcyquhHTUJJA7o5xiz4d7vBoB3',
+  uid: ADMIN_UID,
   email: 'sachin@gmail.com',
   username: 'sachin'
 };
@@ -40,7 +41,7 @@ export function AuthProvider({ children }) {
     }
 
     // 0. Immediate recognition for Vaidya administrator
-    if (user.uid === ADMIN_CONFIG.uid || (user.email && user.email.trim().toLowerCase() === ADMIN_CONFIG.email)) {
+    if (isAdminUser(user)) {
       setUserRole('admin');
       try {
         localStorage.setItem(`vagvat_role_${user.uid}`, 'admin');
@@ -48,40 +49,12 @@ export function AuthProvider({ children }) {
       return 'admin';
     }
 
-    // 1. Instant check from local cache
-    let cachedRole = null;
+    // Client-side caches and profile documents never grant admin access.
     try {
-      cachedRole = localStorage.getItem(`vagvat_role_${user.uid}`);
-      if (cachedRole) {
-        setUserRole(cachedRole);
-      }
+      localStorage.setItem(`vagvat_role_${user.uid}`, 'customer');
     } catch {}
-
-    // 2. Async check from Firestore with 2.5s timeout guard so it never blocks
-    if (db) {
-      try {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Firestore timeout')), 2500)
-        );
-        const docPromise = getDoc(doc(db, 'users', user.uid));
-        const userDoc = await Promise.race([docPromise, timeoutPromise]);
-
-        if (userDoc && userDoc.exists()) {
-          const role = userDoc.data().role || 'customer';
-          setUserRole(role);
-          try {
-            localStorage.setItem(`vagvat_role_${user.uid}`, role);
-          } catch {}
-          return role;
-        }
-      } catch (err) {
-        // Fallback to cached role or default
-      }
-    }
-
-    const fallback = cachedRole || 'customer';
-    setUserRole(fallback);
-    return fallback;
+    setUserRole('customer');
+    return 'customer';
   };
 
   useEffect(() => {
@@ -93,7 +66,7 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        if (user.uid === ADMIN_CONFIG.uid || user.email?.toLowerCase() === ADMIN_CONFIG.email) {
+        if (isAdminUser(user)) {
           setUserRole('admin');
           try {
             localStorage.setItem(`vagvat_role_${user.uid}`, 'admin');
@@ -199,7 +172,7 @@ export function AuthProvider({ children }) {
     const cred = await signInWithEmailAndPassword(auth, targetEmail, password);
 
     // Strictly enforce Firebase Admin UID
-    if (cred.user.uid !== ADMIN_CONFIG.uid) {
+    if (!isAdminUser(cred.user)) {
       await signOut(auth);
       throw new Error('Access Denied: This account does not possess Vaidya/Dispensary Administrator privileges.');
     }
@@ -215,54 +188,6 @@ export function AuthProvider({ children }) {
       }));
     } catch {}
 
-    return cred.user;
-  };
-
-  // Register / Authorize an Admin
-  const registerAdmin = async (email, password, adminKey, displayName = 'Vagvat Vaidya Administrator') => {
-    const VALID_ADMIN_KEY = 'VAGVAT-ADMIN-2025';
-    if (adminKey !== VALID_ADMIN_KEY) {
-      throw new Error('Invalid Security Passphrase. Contact Head of Vaidya Operations for authorization.');
-    }
-
-    if (!auth) throw new Error('Authentication service currently unavailable.');
-
-    let cred;
-    try {
-      cred = await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      if (err.code === 'auth/email-already-in-use') {
-        cred = await signInWithEmailAndPassword(auth, email, password);
-      } else {
-        throw err;
-      }
-    }
-
-    if (displayName) {
-      try {
-        await updateProfile(cred.user, { displayName });
-      } catch {}
-    }
-
-    if (db) {
-      try {
-        await setDoc(doc(db, 'users', cred.user.uid), {
-          uid: cred.user.uid,
-          email,
-          displayName,
-          role: 'admin',
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-      } catch (e) {
-        console.warn('Could not set admin in Firestore:', e);
-      }
-    }
-
-    try {
-      localStorage.setItem(`vagvat_role_${cred.user.uid}`, 'admin');
-    } catch {}
-
-    setUserRole('admin');
     return cred.user;
   };
 
@@ -294,7 +219,6 @@ export function AuthProvider({ children }) {
     signUpCustomer,
     loginWithGoogle,
     loginAdmin,
-    registerAdmin,
     resetPassword,
     logout
   };

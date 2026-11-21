@@ -26,7 +26,6 @@ export default function AuthModal({ isOpen, onClose, initialView = 'customer' })
     signUpCustomer,
     loginWithGoogle,
     loginAdmin,
-    registerAdmin,
     resetPassword
   } = useAuth();
 
