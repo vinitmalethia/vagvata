@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, ShieldCheck, Truck, CreditCard, Lock, ArrowLeft, ArrowRight, Sparkles, ShoppingBag, AlertCircle } from 'lucide-react';
 import ProductVisual from './ProductVisual';
 import { useAuth } from '../context/AuthContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, functions } from '../firebase';
-import { httpsCallable } from 'firebase/functions';
+import { db } from '../firebase';
+
+const PAYMENT_API_URL = (import.meta.env.VITE_PAYMENT_API_URL || '').replace(/\/$/, '');
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_CF_TURNSTILE_SITE_KEY;
+const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_U2sHbcQLesxTcM';
 
 const loadRazorpayCheckout = () => new Promise((resolve, reject) => {
   if (window.Razorpay) return resolve();
@@ -22,6 +25,24 @@ const loadRazorpayCheckout = () => new Promise((resolve, reject) => {
   script.onload = resolve;
   script.onerror = () => reject(new Error('Could not load the secure payment window.'));
   document.body.appendChild(script);
+});
+
+const loadTurnstile = () => new Promise((resolve, reject) => {
+  if (window.turnstile) return resolve();
+  const existingScript = document.querySelector('script[data-cloudflare-turnstile]');
+  if (existingScript) {
+    existingScript.addEventListener('load', resolve, { once: true });
+    existingScript.addEventListener('error', () => reject(new Error('Could not load the security check.')), { once: true });
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+  script.async = true;
+  script.defer = true;
+  script.dataset.cloudflareTurnstile = 'true';
+  script.onload = resolve;
+  script.onerror = () => reject(new Error('Could not load the security check.'));
+  document.head.appendChild(script);
 });
 
 export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted, paymentGatewayConfigured, testOrdersEnabled }) {
@@ -41,11 +62,40 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
   const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [orderPaymentId, setOrderPaymentId] = useState('');
   const [orderIsTest, setOrderIsTest] = useState(false);
   const [orderSyncStatus, setOrderSyncStatus] = useState('unknown');
   const [placedDateTime, setPlacedDateTime] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileContainerRef = useRef(null);
+  const turnstileWidgetIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen || step !== 2 || !paymentGatewayConfigured || !TURNSTILE_SITE_KEY) return undefined;
+    let cancelled = false;
+    loadTurnstile().then(() => {
+      if (cancelled || !turnstileContainerRef.current || !window.turnstile) return;
+      turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        action: 'checkout',
+        callback: (token) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(''),
+        'error-callback': () => setTurnstileToken('')
+      });
+    }).catch((error) => {
+      if (!cancelled) setCheckoutError(error.message || 'Could not load the security check.');
+    });
+    return () => {
+      cancelled = true;
+      if (turnstileWidgetIdRef.current !== null && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetIdRef.current);
+        turnstileWidgetIdRef.current = null;
+      }
+      setTurnstileToken('');
+    };
+  }, [isOpen, step, paymentGatewayConfigured]);
 
   // Reset state & auto-fill from currentUser when modal is opened
   useEffect(() => {
@@ -56,7 +106,9 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       setFormErrors({});
       setTouched({});
       setCheckoutError('');
+      setTurnstileToken('');
       setOrderIsTest(false);
+      setOrderPaymentId('');
       setOrderSyncStatus('unknown');
       if (currentUser) {
         setFormData(prev => ({
@@ -140,8 +192,8 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       if (testOrder && !testOrdersEnabled) {
         throw new Error('Test orders are only available in local development.');
       }
-      if (!testOrder && (!paymentId || !serverConfirmed || verifiedOrder?.paymentStatus !== 'Paid')) {
-        throw new Error('Verified online payment is required before placing an order.');
+      if (!testOrder && !paymentId) {
+        throw new Error('Payment confirmation is required before placing an order.');
       }
       const nowIso = new Date().toISOString();
       const orderData = {
@@ -180,7 +232,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
         }))
       };
 
-      // 1. Try cloud sync so test orders can be checked across devices in the admin dashboard.
+      // 1. Try cloud sync so orders can be checked across devices in the admin dashboard.
       let cloudSynced = serverConfirmed;
       if (db && !serverConfirmed) {
         try {
@@ -207,6 +259,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
 
       // 3. Mark the test order or verified payment result and transition to confirmation.
       setOrderId(generatedId);
+      setOrderPaymentId(paymentId || verifiedOrder?.paymentId || '');
       setOrderIsTest(testOrder);
       setOrderSyncStatus(cloudSynced ? 'cloud' : 'local');
       setPlacedDateTime(`${dateStr} at ${timeStr}`);
@@ -263,34 +316,67 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
           return;
         }
 
-        if (!paymentGatewayConfigured || !functions) {
-          throw new Error('Secure online checkout is not configured yet.');
+        if (!paymentGatewayConfigured) {
+          throw new Error('Online payment is not configured yet. Please configure Razorpay to accept payments.');
         }
 
-        const createOrder = httpsCallable(functions, 'createRazorpayOrder');
-        const created = await createOrder({
-          customer: {
-            fullName: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            street: formData.address,
-            city: formData.city,
-            state: formData.state,
-            pincode: formData.pincode
-          },
-          items: cartItems.map(item => ({ id: item.product.id, quantity: item.quantity })),
-          couponCode: checkoutData?.couponCode || ''
-        });
-        const paymentOrder = created.data;
+        let paymentOrder;
+
+        if (PAYMENT_API_URL) {
+          if (TURNSTILE_SITE_KEY && !turnstileToken) {
+            throw new Error('Complete the security check before checkout.');
+          }
+          let createResponse;
+          try {
+            createResponse = await fetch(`${PAYMENT_API_URL}/checkout/create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customer: {
+                  fullName: formData.fullName,
+                  email: formData.email,
+                  phone: formData.phone,
+                  street: formData.address,
+                  city: formData.city,
+                  state: formData.state,
+                  pincode: formData.pincode
+                },
+                items: cartItems.map(item => ({ id: item.product.id, quantity: item.quantity })),
+                couponCode: checkoutData?.couponCode || '',
+                turnstileToken: turnstileToken || ''
+              })
+            });
+          } finally {
+            setTurnstileToken('');
+            if (turnstileWidgetIdRef.current !== null && window.turnstile) {
+              window.turnstile.reset(turnstileWidgetIdRef.current);
+            }
+          }
+          const createData = await createResponse.json().catch(() => ({}));
+          if (!createResponse.ok) throw new Error(createData.error || 'Could not start secure checkout.');
+          paymentOrder = createData;
+        } else {
+          // Direct Razorpay Standard Checkout using configured Key ID
+          const activeKeyId = RAZORPAY_KEY_ID;
+          if (!activeKeyId) {
+            throw new Error('Razorpay Key ID is not configured. Please add VITE_RAZORPAY_KEY_ID to your environment.');
+          }
+          paymentOrder = {
+            keyId: activeKeyId,
+            amount: Math.round(finalTotal * 100),
+            currency: 'INR',
+            internalOrderId: generatedId,
+            razorpayOrderId: null
+          };
+        }
 
         await loadRazorpayCheckout();
-        if (!window.Razorpay) throw new Error('Secure payment window did not initialize.');
+        if (!window.Razorpay) throw new Error('Razorpay payment gateway failed to initialize.');
 
-        const checkout = new window.Razorpay({
+        const razorpayOptions = {
           key: paymentOrder.keyId,
           amount: paymentOrder.amount,
-          currency: paymentOrder.currency,
-          order_id: paymentOrder.razorpayOrderId,
+          currency: paymentOrder.currency || 'INR',
           name: 'Vagvat Ayurveda',
           description: `Order ${paymentOrder.internalOrderId}`,
           image: `${window.location.origin}/images/logo.jpg`,
@@ -299,22 +385,38 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
             email: formData.email,
             contact: formData.phone
           },
-          notes: { orderReference: paymentOrder.internalOrderId },
+          notes: {
+            orderReference: paymentOrder.internalOrderId,
+            customerAddress: `${formData.address}, ${formData.city} - ${formData.pincode}`
+          },
           theme: { color: '#C9A45C' },
           handler: async (response) => {
             try {
-              const verifyPayment = httpsCallable(functions, 'verifyRazorpayPayment');
-              const verified = await verifyPayment({
-                internalOrderId: paymentOrder.internalOrderId,
-                razorpayOrderId: response.razorpay_order_id,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature
-              });
-              await finalizeOrder(paymentOrder.internalOrderId, dateStr, timeStr, {
-                paymentId: response.razorpay_payment_id,
-                serverConfirmed: verified.data?.verified === true,
-                verifiedOrder: verified.data?.order
-              });
+              if (PAYMENT_API_URL && paymentOrder.razorpayOrderId) {
+                const verifyResponse = await fetch(`${PAYMENT_API_URL}/checkout/verify`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    internalOrderId: paymentOrder.internalOrderId,
+                    razorpayOrderId: response.razorpay_order_id,
+                    paymentId: response.razorpay_payment_id,
+                    signature: response.razorpay_signature
+                  })
+                });
+                const verified = await verifyResponse.json().catch(() => ({}));
+                if (!verifyResponse.ok) throw new Error(verified.error || 'Payment confirmation is pending.');
+                await finalizeOrder(paymentOrder.internalOrderId, dateStr, timeStr, {
+                  paymentId: response.razorpay_payment_id,
+                  serverConfirmed: verified.verified === true,
+                  verifiedOrder: verified.order
+                });
+              } else {
+                await finalizeOrder(paymentOrder.internalOrderId, dateStr, timeStr, {
+                  paymentId: response.razorpay_payment_id,
+                  serverConfirmed: false,
+                  testOrder: false
+                });
+              }
             } catch (err) {
               console.error('Payment confirmation error:', err);
               setIsProcessing(false);
@@ -324,7 +426,13 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
           modal: {
             ondismiss: () => setIsProcessing(false)
           }
-        });
+        };
+
+        if (paymentOrder.razorpayOrderId) {
+          razorpayOptions.order_id = paymentOrder.razorpayOrderId;
+        }
+
+        const checkout = new window.Razorpay(razorpayOptions);
         checkout.on('payment.failed', (response) => {
           setIsProcessing(false);
           setCheckoutError(response?.error?.description || 'Payment was not completed. Please try again.');
@@ -665,6 +773,11 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                       <span>{testOrdersEnabled ? 'Test orders are not paid or dispatched and are excluded from revenue reports.' : 'Online only. No order is accepted until payment processing is available.'}</span>
                     </div>
                   </div>
+                  {paymentGatewayConfigured && TURNSTILE_SITE_KEY && (
+                    <div className="min-h-[68px] flex justify-center items-center" aria-label="Checkout security verification">
+                      <div ref={turnstileContainerRef} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Final Order Amount Summary */}
@@ -694,12 +807,12 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                 {/* Confirm Pay Button */}
                 <button
                   type="submit"
-                  disabled={isProcessing || (!paymentGatewayConfigured && !testOrdersEnabled)}
+                  disabled={isProcessing || (!paymentGatewayConfigured && !testOrdersEnabled) || (paymentGatewayConfigured && TURNSTILE_SITE_KEY && !turnstileToken)}
                   className="w-full py-3.5 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] disabled:opacity-50 text-[#102C20] font-bold text-xs tracking-wider uppercase transition-all shadow-lg flex items-center justify-center space-x-2 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
                   <span>
-                    {isProcessing ? 'Processing...' : testOrdersEnabled ? `PLACE TEST ORDER • ₹${finalTotal}` : paymentGatewayConfigured ? `PAY & PLACE ORDER • ₹${finalTotal}` : 'ONLINE PAYMENT UNAVAILABLE'}
+                    {isProcessing ? 'Processing Payment...' : testOrdersEnabled ? `PLACE TEST ORDER • ₹${finalTotal}` : paymentGatewayConfigured ? `PAY VIA RAZORPAY • ₹${finalTotal}` : 'ONLINE PAYMENT UNAVAILABLE'}
                   </span>
                 </button>
               </form>
@@ -722,6 +835,11 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   <p className="text-xs text-[#4A5B4D] mt-2">
                     Order Reference ID: <strong className="text-[#173D2B] font-mono">{orderId}</strong>
                   </p>
+                  {orderPaymentId && (
+                    <p className="text-[11px] text-emerald-800 font-mono mt-1">
+                      Razorpay Payment ID: <strong>{orderPaymentId}</strong>
+                    </p>
+                  )}
                   {placedDateTime && (
                     <p className="text-[11px] text-[#79583B] mt-1 font-mono">
                       Order Placed: <strong>{placedDateTime}</strong>

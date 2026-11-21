@@ -1,4 +1,4 @@
-// Server-side price source. Keep synchronized with src/data/products.js.
+// Server-trusted price list. Keep synchronized with src/data/products.js.
 export const CATALOG = Object.freeze({
   'mall-yoddha': { name: 'Mall Yoddha (Swarna Bhasma)', price: 17999, volume: 'Net Wt. 1 kg • Swarna Bhasma' },
   'vajra-shakti-premium': { name: 'Vajra Shakti Premium', price: 11999, volume: '60 Capsules • Swarna Bhasma' },

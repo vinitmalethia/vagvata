@@ -1,0 +1,10 @@
+# Cloudflare Worker Secrets (Required when running 'npx wrangler dev' or setting secrets)
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
+
+# Optional: Cloudflare Turnstile Secret Key
+TURNSTILE_SECRET_KEY=
+
+# Google Service Account JSON for Firestore REST API
+GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"vagvat-98c70",...}

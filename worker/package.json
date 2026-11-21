@@ -1,0 +1,13 @@
+{
+  "name": "vagvat-payment-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test payment-core.test.js index.test.js",
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.166.0"
+  }
+}

@@ -41,7 +41,7 @@ test('the configured admin alone can read, update and delete orders', async () =
   await assertSucceeds(deleteDoc(doc(adminDb, 'orders', TEST_ORDER_ID)));
 });
 
-test('customers can create only unpaid test orders', async () => {
+test('customers can create unpaid test orders or orders with valid Razorpay payment', async () => {
   const guestDb = testEnv.unauthenticatedContext().firestore();
   await assertSucceeds(setDoc(doc(guestDb, 'orders', TEST_ORDER_ID), order()));
   await assertFails(setDoc(doc(guestDb, 'orders', 'VAGVAT-FAKE-PAID'), order({
@@ -49,6 +49,13 @@ test('customers can create only unpaid test orders', async () => {
     isTestOrder: false,
     paymentStatus: 'Paid',
     paymentMethod: 'Razorpay'
+  })));
+  await assertSucceeds(setDoc(doc(guestDb, 'orders', 'VAGVAT-PAID-1'), order({
+    orderId: 'VAGVAT-PAID-1',
+    isTestOrder: false,
+    paymentStatus: 'Paid',
+    paymentMethod: 'Razorpay',
+    paymentId: 'pay_valid_123456'
   })));
 });
 

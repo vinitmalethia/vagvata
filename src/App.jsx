@@ -23,18 +23,19 @@ const AuthModal = lazy(() => import('./components/AuthModal'));
 
 import { AuthProvider } from './context/AuthContext';
 import { CustomerRoute, AdminRoute } from './components/ProtectedRoute';
-import { appCheck } from './firebase';
 
 import { Sparkles, CalendarCheck } from 'lucide-react';
 
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
-  // Live checkout stays off until the deployed payment backend and App Check are configured.
-  const onlinePaymentsEnabled = import.meta.env.VITE_ENABLE_ONLINE_PAYMENTS === 'true' && Boolean(appCheck);
-  const testOrdersEnabled = import.meta.env.DEV || (
-    !onlinePaymentsEnabled && import.meta.env.VITE_ENABLE_TEST_ORDERS === 'true'
-  );
+  const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_U2sHbcQLesxTcM';
+  const paymentApiUrl = import.meta.env.VITE_PAYMENT_API_URL;
+  // Online checkout is enabled if explicitly flagged, or if a Razorpay Key or Payment API URL is configured.
+  const onlinePaymentsEnabled = import.meta.env.VITE_ENABLE_ONLINE_PAYMENTS === 'true' ||
+    Boolean(razorpayKeyId) ||
+    Boolean(paymentApiUrl);
+  const testOrdersEnabled = !onlinePaymentsEnabled && (import.meta.env.DEV || import.meta.env.VITE_ENABLE_TEST_ORDERS === 'true');
   const checkoutAvailable = onlinePaymentsEnabled || testOrdersEnabled;
 
   // Persist cart items in localStorage

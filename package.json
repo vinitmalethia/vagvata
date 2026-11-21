@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test tests/admin-authorization.test.js functions/paymentCore.test.js",
+    "test": "node --test tests/admin-authorization.test.js worker/payment-core.test.js worker/index.test.js",
     "test:rules": "firebase emulators:exec --only firestore --project demo-vagvatayurveda \"node --test tests/firestore-rules.test.js\""
   },
   "dependencies": {

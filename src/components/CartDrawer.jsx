@@ -258,7 +258,7 @@ export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailab
                 {/* Payment status footer */}
                 <div className="flex items-center justify-center space-x-2 text-[10px] text-gray-500 pt-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{testOrdersEnabled ? 'TEST MODE — no payment will be taken or order dispatched.' : checkoutAvailable ? 'Secure online payments are processed by Razorpay.' : 'Online payment setup is required before checkout is available.'}</span>
+                  <span>{testOrdersEnabled ? 'TEST MODE — no payment will be taken or order dispatched.' : checkoutAvailable ? 'Secure online payments are powered by Razorpay (UPI, Cards, NetBanking).' : 'Online payment setup is required before checkout is available.'}</span>
                 </div>
               </div>
             )}
