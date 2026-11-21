@@ -29,8 +29,9 @@ import { Sparkles, CalendarCheck } from 'lucide-react';
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  // Keep checkout usable for clearly labeled test orders until verified online payments are deployed.
   const onlinePaymentsEnabled = false;
-  const testOrdersEnabled = import.meta.env.DEV;
+  const testOrdersEnabled = import.meta.env.DEV || !onlinePaymentsEnabled;
   const checkoutAvailable = onlinePaymentsEnabled || testOrdersEnabled;
 
   // Persist cart items in localStorage

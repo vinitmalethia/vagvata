@@ -218,7 +218,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       // Prevent duplicate submissions from repeated clicks
       if (isProcessing) return;
 
-      if (!paymentGatewayConfigured) {
+      if (!paymentGatewayConfigured && !testOrdersEnabled) {
         setCheckoutError('Online payment is not set up yet, so your order was not placed. Please try again later.');
         return;
       }
@@ -231,16 +231,16 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
       const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-      // In local development, allow an explicitly marked no-payment test order.
-        try {
-          await finalizeOrder(generatedId, dateStr, timeStr, {
-            testOrder: testOrdersEnabled && !paymentGatewayConfigured
-          });
-        } catch (err) {
-          console.error('Order finalization error:', err);
-          setIsProcessing(false);
-          setCheckoutError(err.message || 'Unable to place order. Please try again.');
-        }
+      // Only create unpaid orders when the explicit test mode is enabled.
+      try {
+        await finalizeOrder(generatedId, dateStr, timeStr, {
+          testOrder: testOrdersEnabled && !paymentGatewayConfigured
+        });
+      } catch (err) {
+        console.error('Order finalization error:', err);
+        setIsProcessing(false);
+        setCheckoutError(err.message || 'Unable to place order. Please try again.');
+      }
     }
   };
 

@@ -6,13 +6,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 export const firebaseConfig = {
-  apiKey: "AIzaSyAoxd-dB0-6VC3Z46RLnUJG7g_8ZWxyD2Q",
-  authDomain: "vagva-3402d.firebaseapp.com",
-  projectId: "vagva-3402d",
-  storageBucket: "vagva-3402d.firebasestorage.app",
-  messagingSenderId: "737767398167",
-  appId: "1:737767398167:web:a83662a715e5896e653552",
-  measurementId: "G-7XHVWWGZ8C"
+  apiKey: "AIzaSyAmRd8zJ5ZdC6DyVQWbu7_axuG0f9UqGbw",
+  authDomain: "vagvat-98c70.firebaseapp.com",
+  projectId: "vagvat-98c70",
+  storageBucket: "vagvat-98c70.firebasestorage.app",
+  messagingSenderId: "35326892014",
+  appId: "1:35326892014:web:24bf50096cffff043ea0ff",
+  measurementId: "G-KG0LNNNQ82"
 };
 
 // Safe singleton Firebase App initialization
