@@ -76,7 +76,7 @@ export default function CustomerAccountPage() {
                 total: Number(data.total) || 0,
                 paymentMethod: data.paymentMethod || 'Not recorded',
                 paymentStatus: data.paymentStatus || 'Unverified',
-                status: data.status === 'Delivered' ? 'Delivered' : 'Ordered',
+                status: data.status || 'Ordered',
                 items: data.items || [],
                 createdAt: data.createdAt || null
               });
@@ -271,7 +271,7 @@ export default function CustomerAccountPage() {
                           : 'bg-amber-100 text-amber-800'
                       }`}>
                         <CheckCircle2 className="w-3 h-3" />
-                        <span>{order.status === 'Delivered' ? 'Delivered' : 'Ordered'}</span>
+                        <span>{order.status}</span>
                       </span>
                     </div>
                   </div>

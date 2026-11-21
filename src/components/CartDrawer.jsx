@@ -21,6 +21,7 @@ export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailab
     setPromoError('');
     setPromoSuccess('');
     const code = promoCode.trim().toUpperCase();
+    setDiscountPercent(0);
 
     if (code === 'VAGVAT10' || code === 'AYURVEDA10') {
       setDiscountPercent(10);
@@ -239,7 +240,13 @@ export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailab
                 <button
                   onClick={() => {
                     onClose();
-                    onProceedToCheckout({ subtotal, discountAmount, shippingCost, finalTotal });
+                    onProceedToCheckout({
+                      subtotal,
+                      discountAmount,
+                      shippingCost,
+                      finalTotal,
+                      couponCode: discountPercent > 0 ? promoCode.trim().toUpperCase() : ''
+                    });
                   }}
                   disabled={!checkoutAvailable}
                   className="w-full py-3.5 rounded-md bg-[#C9A45C] hover:bg-[#DFC282] disabled:opacity-60 disabled:cursor-not-allowed text-[#102C20] font-bold text-xs tracking-wider uppercase transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-[#C9A45C]/30 cursor-pointer"
@@ -251,7 +258,7 @@ export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailab
                 {/* Payment status footer */}
                 <div className="flex items-center justify-center space-x-2 text-[10px] text-gray-500 pt-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{testOrdersEnabled ? 'TEST MODE — no payment will be taken or order dispatched.' : 'Online payment setup is required before checkout is available.'}</span>
+                  <span>{testOrdersEnabled ? 'TEST MODE — no payment will be taken or order dispatched.' : checkoutAvailable ? 'Secure online payments are processed by Razorpay.' : 'Online payment setup is required before checkout is available.'}</span>
                 </div>
               </div>
             )}

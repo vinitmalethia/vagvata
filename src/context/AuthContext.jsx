@@ -137,7 +137,9 @@ export function AuthProvider({ children }) {
     const cred = await signInWithPopup(auth, googleProvider);
     let role = await resolveRole(cred.user);
 
-    if (db) {
+    // UID is the sole admin authority. Never let a missing profile downgrade the
+    // configured administrator to customer during the Google sign-in flow.
+    if (db && !isAdminUser(cred.user)) {
       try {
         const userDocRef = doc(db, 'users', cred.user.uid);
         const userDoc = await getDoc(userDocRef);

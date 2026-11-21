@@ -4,7 +4,25 @@ import { X, CheckCircle, ShieldCheck, Truck, CreditCard, Lock, ArrowLeft, ArrowR
 import ProductVisual from './ProductVisual';
 import { useAuth } from '../context/AuthContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, functions } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
+
+const loadRazorpayCheckout = () => new Promise((resolve, reject) => {
+  if (window.Razorpay) return resolve();
+  const existingScript = document.querySelector('script[data-razorpay-checkout]');
+  if (existingScript) {
+    existingScript.addEventListener('load', resolve, { once: true });
+    existingScript.addEventListener('error', () => reject(new Error('Could not load the secure payment window.')), { once: true });
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+  script.async = true;
+  script.dataset.razorpayCheckout = 'true';
+  script.onload = resolve;
+  script.onerror = () => reject(new Error('Could not load the secure payment window.'));
+  document.body.appendChild(script);
+});
 
 export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData, onOrderCompleted, paymentGatewayConfigured, testOrdersEnabled }) {
   const { currentUser } = useAuth();
@@ -112,41 +130,49 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
     setFormErrors(validate(formData));
   };
 
-  const finalizeOrder = async (generatedId, dateStr, timeStr, { paymentId = null, testOrder = false } = {}) => {
+  const finalizeOrder = async (generatedId, dateStr, timeStr, {
+    paymentId = null,
+    testOrder = false,
+    serverConfirmed = false,
+    verifiedOrder = null
+  } = {}) => {
     try {
       if (testOrder && !testOrdersEnabled) {
         throw new Error('Test orders are only available in local development.');
       }
-      if (!testOrder && !paymentId) {
+      if (!testOrder && (!paymentId || !serverConfirmed || verifiedOrder?.paymentStatus !== 'Paid')) {
         throw new Error('Verified online payment is required before placing an order.');
       }
       const nowIso = new Date().toISOString();
       const orderData = {
-        orderId: generatedId,
-        customerName: formData.fullName.trim(),
-        customerEmail: formData.email.trim(),
-        customerPhone: formData.phone.trim(),
-        shippingAddress: `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
+        ...verifiedOrder,
+        orderId: verifiedOrder?.orderId || generatedId,
+        customerName: verifiedOrder?.customerName || formData.fullName.trim(),
+        customerEmail: verifiedOrder?.customerEmail || formData.email.trim(),
+        customerPhone: verifiedOrder?.customerPhone || formData.phone.trim(),
+        shippingAddress: verifiedOrder?.shippingAddress || `${formData.address.trim()}, ${formData.city.trim()} - ${formData.pincode.trim()}`,
         addressDetails: {
           street: formData.address.trim(),
           city: formData.city.trim(),
+          state: formData.state.trim(),
           pincode: formData.pincode.trim()
         },
-        date: dateStr,
-        time: timeStr,
-        dateTime: `${dateStr} • ${timeStr}`,
-        total: Number(finalTotal),
-        subtotal: Number(subtotal),
-        discountAmount: Number(discountAmount),
-        shippingCost: Number(shippingCost),
-        paymentMethod: testOrder ? 'Test Order (No Payment)' : 'Online Payment',
-        paymentStatus: testOrder ? 'Test' : 'Pending',
-        paymentId,
+        date: verifiedOrder?.date || dateStr,
+        time: verifiedOrder?.time || timeStr,
+        dateTime: verifiedOrder?.dateTime || `${dateStr} • ${timeStr}`,
+        total: Number(verifiedOrder?.total ?? finalTotal),
+        subtotal: Number(verifiedOrder?.subtotal ?? subtotal),
+        discountAmount: Number(verifiedOrder?.discountAmount ?? discountAmount),
+        shippingCost: Number(verifiedOrder?.shippingCost ?? shippingCost),
+        paymentMethod: testOrder ? 'Test Order (No Payment)' : 'Razorpay',
+        paymentStatus: testOrder ? 'Test' : 'Paid',
+        paymentId: paymentId || verifiedOrder?.paymentId || null,
         isTestOrder: testOrder,
-        status: 'Ordered',
+        status: verifiedOrder?.status || 'Ordered',
         userId: currentUser?.uid || null,
         createdAt: nowIso,
-        items: cartItems.map(item => ({
+        items: verifiedOrder?.items || cartItems.map(item => ({
+          id: item.product.id,
           name: item.product.name,
           quantity: item.quantity,
           price: Number(item.product.price),
@@ -155,8 +181,8 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       };
 
       // 1. Try cloud sync so test orders can be checked across devices in the admin dashboard.
-      let cloudSynced = false;
-      if (db) {
+      let cloudSynced = serverConfirmed;
+      if (db && !serverConfirmed) {
         try {
           const firestoreWrite = setDoc(doc(db, 'orders', generatedId), {
             ...orderData,
@@ -187,7 +213,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       setIsProcessing(false);
       setStep(3);
 
-      if (onOrderCompleted) onOrderCompleted(generatedId);
+      if (onOrderCompleted) onOrderCompleted(orderData.orderId);
     } catch (err) {
       console.error('Failed to finalize order:', err);
       setIsProcessing(false);
@@ -231,11 +257,79 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
       const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
       const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-      // Only create unpaid orders when the explicit test mode is enabled.
       try {
-        await finalizeOrder(generatedId, dateStr, timeStr, {
-          testOrder: testOrdersEnabled && !paymentGatewayConfigured
+        if (testOrdersEnabled && !paymentGatewayConfigured) {
+          await finalizeOrder(generatedId, dateStr, timeStr, { testOrder: true });
+          return;
+        }
+
+        if (!paymentGatewayConfigured || !functions) {
+          throw new Error('Secure online checkout is not configured yet.');
+        }
+
+        const createOrder = httpsCallable(functions, 'createRazorpayOrder');
+        const created = await createOrder({
+          customer: {
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            pincode: formData.pincode
+          },
+          items: cartItems.map(item => ({ id: item.product.id, quantity: item.quantity })),
+          couponCode: checkoutData?.couponCode || ''
         });
+        const paymentOrder = created.data;
+
+        await loadRazorpayCheckout();
+        if (!window.Razorpay) throw new Error('Secure payment window did not initialize.');
+
+        const checkout = new window.Razorpay({
+          key: paymentOrder.keyId,
+          amount: paymentOrder.amount,
+          currency: paymentOrder.currency,
+          order_id: paymentOrder.razorpayOrderId,
+          name: 'Vagvat Ayurveda',
+          description: `Order ${paymentOrder.internalOrderId}`,
+          image: `${window.location.origin}/images/logo.jpg`,
+          prefill: {
+            name: formData.fullName,
+            email: formData.email,
+            contact: formData.phone
+          },
+          notes: { orderReference: paymentOrder.internalOrderId },
+          theme: { color: '#C9A45C' },
+          handler: async (response) => {
+            try {
+              const verifyPayment = httpsCallable(functions, 'verifyRazorpayPayment');
+              const verified = await verifyPayment({
+                internalOrderId: paymentOrder.internalOrderId,
+                razorpayOrderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature
+              });
+              await finalizeOrder(paymentOrder.internalOrderId, dateStr, timeStr, {
+                paymentId: response.razorpay_payment_id,
+                serverConfirmed: verified.data?.verified === true,
+                verifiedOrder: verified.data?.order
+              });
+            } catch (err) {
+              console.error('Payment confirmation error:', err);
+              setIsProcessing(false);
+              setCheckoutError(err.message || 'Payment confirmation is pending. Contact support before retrying payment.');
+            }
+          },
+          modal: {
+            ondismiss: () => setIsProcessing(false)
+          }
+        });
+        checkout.on('payment.failed', (response) => {
+          setIsProcessing(false);
+          setCheckoutError(response?.error?.description || 'Payment was not completed. Please try again.');
+        });
+        checkout.open();
       } catch (err) {
         console.error('Order finalization error:', err);
         setIsProcessing(false);
@@ -554,15 +648,15 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                         </div>
                         <div>
                           <span className="font-serif font-bold text-sm text-[#173D2B] block">
-                            {testOrdersEnabled ? 'Test Order (No Payment)' : 'Online Payment'}
+                            {testOrdersEnabled ? 'Test Order (No Payment)' : paymentGatewayConfigured ? 'Razorpay Secure Checkout' : 'Online Payment'}
                           </span>
                           <span className="text-xs text-[#4A5B4D]">
-                            {testOrdersEnabled ? 'For local testing only. No payment will be taken.' : 'Checkout will open when secure online payments are configured.'}
+                            {testOrdersEnabled ? 'For local testing only. No payment will be taken.' : paymentGatewayConfigured ? 'Payment is verified securely before your order is confirmed.' : 'Checkout will open when secure online payments are configured.'}
                           </span>
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded-full uppercase shrink-0">
-                        {testOrdersEnabled ? 'TEST MODE' : 'Setup Required'}
+                        {testOrdersEnabled ? 'TEST MODE' : paymentGatewayConfigured ? 'READY' : 'Setup Required'}
                       </span>
                     </div>
 
@@ -585,7 +679,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, checkoutData
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Payment Gateway</span>
-                    <span className="text-[#173D2B] font-bold text-amber-800">{testOrdersEnabled ? 'Test — no payment' : 'Not available yet'}</span>
+                      <span className="text-[#173D2B] font-bold text-amber-800">{testOrdersEnabled ? 'Test — no payment' : paymentGatewayConfigured ? 'Razorpay' : 'Not available yet'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#4A5B4D]">Shipping To</span>

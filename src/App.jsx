@@ -23,15 +23,18 @@ const AuthModal = lazy(() => import('./components/AuthModal'));
 
 import { AuthProvider } from './context/AuthContext';
 import { CustomerRoute, AdminRoute } from './components/ProtectedRoute';
+import { appCheck } from './firebase';
 
 import { Sparkles, CalendarCheck } from 'lucide-react';
 
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
-  // Keep checkout usable for clearly labeled test orders until verified online payments are deployed.
-  const onlinePaymentsEnabled = false;
-  const testOrdersEnabled = import.meta.env.DEV || !onlinePaymentsEnabled;
+  // Live checkout stays off until the deployed payment backend and App Check are configured.
+  const onlinePaymentsEnabled = import.meta.env.VITE_ENABLE_ONLINE_PAYMENTS === 'true' && Boolean(appCheck);
+  const testOrdersEnabled = import.meta.env.DEV || (
+    !onlinePaymentsEnabled && import.meta.env.VITE_ENABLE_TEST_ORDERS === 'true'
+  );
   const checkoutAvailable = onlinePaymentsEnabled || testOrdersEnabled;
 
   // Persist cart items in localStorage
@@ -299,7 +302,7 @@ function AppContent() {
         onClose={() => setIsCheckoutOpen(false)}
         paymentGatewayConfigured={onlinePaymentsEnabled}
         testOrdersEnabled={testOrdersEnabled}
-        cartItems={cart}
+        cartItems={checkoutItems || cart}
         checkoutData={checkoutData}
         onOrderCompleted={handleOrderCompleted}
       /></Suspense>}

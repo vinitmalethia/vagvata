@@ -143,7 +143,7 @@ export default function AdminDashboardPage() {
             paymentMethod: data.paymentMethod || 'Not recorded',
             paymentStatus: data.paymentStatus || 'Unverified',
             isTestOrder: data.isTestOrder === true,
-            status: data.status === 'Delivered' ? 'Delivered' : 'Ordered',
+            status: data.status || 'Ordered',
             items: data.items || [],
             createdAt: data.createdAt || null
           });
@@ -222,6 +222,11 @@ export default function AdminDashboardPage() {
 
   // Update Order Status directly in Cloud Firestore (Cross-Device Sync)
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    const order = orders.find(item => item.orderId === orderId);
+    if (order && order.paymentStatus !== 'Paid' && !order.isTestOrder) {
+      alert('This order cannot be dispatched until its payment is verified.');
+      return;
+    }
     // 1. Optimistic UI update on current device
     const updated = orders.map(o => o.orderId === orderId ? { ...o, status: newStatus } : o);
     setOrders(updated);
@@ -394,8 +399,7 @@ export default function AdminDashboardPage() {
       o.orderId.toLowerCase().includes(orderSearch.toLowerCase()) ||
       o.customerName.toLowerCase().includes(orderSearch.toLowerCase()) ||
       o.customerPhone.includes(orderSearch);
-    const orderStatus = o.status === 'Delivered' ? 'Delivered' : 'Ordered';
-    const matchesFilter = orderStatusFilter === 'All' || orderStatus === orderStatusFilter;
+    const matchesFilter = orderStatusFilter === 'All' || o.status === orderStatusFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -1014,7 +1018,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="flex space-x-1.5 overflow-x-auto no-scrollbar">
-                  {['All', 'Ordered', 'Delivered'].map((status) => (
+                  {['All', 'Payment Pending', 'Payment Setup Failed', 'Ordered', 'Delivered'].map((status) => (
                     <button
                       key={status}
                       onClick={() => setOrderStatusFilter(status)}
@@ -1081,7 +1085,7 @@ export default function AdminDashboardPage() {
                                   : 'bg-amber-950 text-amber-300 border border-amber-500/30'
                               }`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${order.status === 'Delivered' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                                <span>{order.status === 'Delivered' ? 'Delivered' : 'Ordered'}</span>
+                                <span>{order.status}</span>
                               </span>
                             </td>
                             <td className="p-4 text-right space-x-2">
@@ -1175,7 +1179,7 @@ export default function AdminDashboardPage() {
                           </div>
 
                           <div className="flex items-center space-x-2">
-                            {order.status !== 'Delivered' ? (
+                            {order.status !== 'Delivered' && (order.paymentStatus === 'Paid' || order.isTestOrder) ? (
                               <button
                                 onClick={() => handleUpdateOrderStatus(order.orderId, 'Delivered')}
                                 className="px-3.5 py-2 min-h-[40px] rounded-lg bg-emerald-950 hover:bg-emerald-900 active:bg-emerald-800 text-emerald-300 border border-emerald-500/30 text-xs font-semibold cursor-pointer transition-all flex items-center space-x-1"
@@ -1233,19 +1237,21 @@ export default function AdminDashboardPage() {
                               : 'bg-amber-950 text-amber-300 border border-amber-500/30'
                           }`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${selectedOrder.status === 'Delivered' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                            <span>{selectedOrder.status === 'Delivered' ? 'Delivered' : 'Ordered'}</span>
+                            <span>{selectedOrder.status}</span>
                           </span>
                         </div>
-                        <button
-                          onClick={() => {
-                            const newSt = selectedOrder.status === 'Delivered' ? 'Ordered' : 'Delivered';
-                            handleUpdateOrderStatus(selectedOrder.orderId, newSt);
-                            setSelectedOrder({ ...selectedOrder, status: newSt });
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#DFC282] text-xs font-semibold cursor-pointer transition-colors"
-                        >
-                          {selectedOrder.status === 'Delivered' ? 'Mark as Ordered' : 'Mark as Delivered'}
-                        </button>
+                        {(selectedOrder.paymentStatus === 'Paid' || selectedOrder.isTestOrder) && (
+                          <button
+                            onClick={() => {
+                              const newSt = selectedOrder.status === 'Delivered' ? 'Ordered' : 'Delivered';
+                              handleUpdateOrderStatus(selectedOrder.orderId, newSt);
+                              setSelectedOrder({ ...selectedOrder, status: newSt });
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#DFC282] text-xs font-semibold cursor-pointer transition-colors"
+                          >
+                            {selectedOrder.status === 'Delivered' ? 'Mark as Ordered' : 'Mark as Delivered'}
+                          </button>
+                        )}
                       </div>
 
                       <div className="p-3 rounded-xl bg-black/30 space-y-1">
