@@ -12,6 +12,7 @@ export default function ShopPage({ onSelectProduct, onAddToCart }) {
   const categories = [
     'All',
     "Strength & Stamina",
+    'Skin & Beauty',
     "Women's Wellness",
     'Digestive Wellness',
     'Liver & Digestion',

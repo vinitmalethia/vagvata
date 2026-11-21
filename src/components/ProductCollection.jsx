@@ -10,6 +10,7 @@ export default function ProductCollection({ onSelectProduct, onAddToCart, search
   const categories = [
     'All',
     "Strength & Stamina",
+    'Skin & Beauty',
     "Women's Wellness",
     'Digestive Wellness',
     'Liver & Digestion',

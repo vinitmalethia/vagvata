@@ -34,11 +34,15 @@ export default function ProductCard({ product, onSelectProduct, onAddToCart }) {
             {product.badge}
           </span>
 
-          <div className="flex items-center space-x-1 text-xs text-[#79583B]">
-            <Star className="w-3.5 h-3.5 fill-[#C9A45C] text-[#C9A45C]" />
-            <span className="font-semibold text-[#173D2B]">{product.rating}</span>
-            <span className="text-[#4A5B4D]/70 text-[11px]">({product.reviewCount})</span>
-          </div>
+          {product.reviewCount > 0 ? (
+            <div className="flex items-center space-x-1 text-xs text-[#79583B]">
+              <Star className="w-3.5 h-3.5 fill-[#C9A45C] text-[#C9A45C]" />
+              <span className="font-semibold text-[#173D2B]">{product.rating}</span>
+              <span className="text-[#4A5B4D]/70 text-[11px]">({product.reviewCount})</span>
+            </div>
+          ) : (
+            <span className="text-[10px] font-semibold text-[#4A5B4D]/70">New</span>
+          )}
         </div>
 
         {/* Product Visual Container with Real Photo */}

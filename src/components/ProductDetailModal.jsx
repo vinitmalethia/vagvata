@@ -112,15 +112,19 @@ export default function ProductDetailModal({ product, isOpen, checkoutAvailable,
                   </div>
 
                   {/* Rating */}
-                  <div className="flex items-center space-x-2 mt-2.5">
-                    <div className="flex text-[#C9A45C]">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
+                  {product.reviewCount > 0 ? (
+                    <div className="flex items-center space-x-2 mt-2.5">
+                      <div className="flex text-[#C9A45C]">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
+                      <span className="text-xs font-bold text-[#173D2B]">{product.rating}</span>
+                      <span className="text-xs text-gray-500">({product.reviewCount} verified reviews)</span>
                     </div>
-                    <span className="text-xs font-bold text-[#173D2B]">{product.rating}</span>
-                    <span className="text-xs text-gray-500">({product.reviewCount} verified reviews)</span>
-                  </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-2.5">New product · No reviews yet</p>
+                  )}
 
                   {/* Price Banner */}
                   <div className="mt-4 p-3.5 rounded-xl bg-[#F7F0DF]/60 border border-[#C9A45C]/35 flex items-baseline justify-between">

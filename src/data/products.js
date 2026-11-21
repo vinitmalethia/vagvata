@@ -780,6 +780,36 @@ export const PRODUCTS = [
     ],
     usage: 'Take 1 tablet daily with water, preferably after breakfast or lunch.',
     inStock: true
+  },
+
+  // 14. Veda Finder Skin Care
+  {
+    id: 'veda-finder-skin-care',
+    slug: 'veda-finder-skin-care',
+    name: 'Veda Finder Skin Care',
+    hindiName: '',
+    subtitle: 'Skin Care',
+    tagline: 'Veda Finder Skin Care',
+    category: 'Skin & Beauty',
+    packageColor: '#2E7D32',
+    packageColorName: 'Green & Ivory',
+    colorHex: '#2E7D32',
+    image: '/images/products/veda-finder-skin-care.png',
+    price: 3499,
+    originalPrice: 3499,
+    rating: 0,
+    reviewCount: 0,
+    badge: 'New',
+    capsuleCount: 'Skin Care Product',
+    strength: 'Skin Care',
+    volume: 'Skin Care',
+    dosha: 'Veda Finder',
+    description: 'Veda Finder Skin Care product. Product details, ingredients, and directions have not been provided yet.',
+    boxFeatures: ['Veda Finder', 'Skin Care'],
+    highlights: [],
+    keyIngredients: [],
+    usage: 'Follow the directions on the product packaging.',
+    inStock: true
   }
 ];
 
