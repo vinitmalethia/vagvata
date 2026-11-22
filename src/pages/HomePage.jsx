@@ -1,15 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import HeroSection from '../components/HeroSection';
 import ProductCard from '../components/ProductCard';
 import { PRODUCTS } from '../data/products';
 
 export default function HomePage({ onSelectProduct, onAddToCart, onOpenDoshaQuiz }) {
-  // Flagship 6 formulations for the homepage
-  const featuredProducts = PRODUCTS.slice(0, 6);
-
   return (
     <div className="bg-[#F7F0DF] text-[#263629]">
       
@@ -43,36 +38,26 @@ export default function HomePage({ onSelectProduct, onAddToCart, onOpenDoshaQuiz
         </div>
       </div>
 
-      {/* 3. Featured Products Collection */}
+      {/* 3. Complete Products Collection */}
       <section id="products" className="pt-8 sm:pt-10 pb-16 sm:pb-20 bg-[#F7F0DF] relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="flex flex-col md:flex-row items-center justify-between mb-8 sm:mb-10">
-            <div>
-              <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#DCE5D5]/70 text-[#173D2B] text-xs font-semibold uppercase tracking-[0.2em] mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#C9A45C]" />
-                <span>Featured Apothecary</span>
-              </div>
-              <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#173D2B]">
-                Master Formulations
-              </h2>
-              <p className="text-xs sm:text-sm text-[#4A5B4D] mt-1 max-w-xl">
-                Classical remedies prepared with genuine Swarna Bhasma, wildcrafted Himalayan herbs, and zero chemical fillers.
-              </p>
+          <div className="text-center mb-10 sm:mb-12">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#DCE5D5]/70 text-[#173D2B] text-xs font-semibold uppercase tracking-[0.2em] mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#C9A45C]" />
+              <span>Classical Apothecary</span>
             </div>
-
-            <Link
-              to="/shop"
-              className="mt-4 md:mt-0 px-6 py-3 rounded-md bg-[#173D2B] hover:bg-[#102C20] text-[#F7F0DF] text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center space-x-2 shadow hover:scale-105 shrink-0"
-            >
-              <span>VIEW ALL IN SHOP ({PRODUCTS.length})</span>
-              <ArrowRight className="w-4 h-4 text-[#C9A45C]" />
-            </Link>
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#173D2B]">
+              Master Formulations
+            </h2>
+            <p className="text-xs sm:text-sm text-[#4A5B4D] mt-2 max-w-xl mx-auto">
+              Pure classical remedies prepared with genuine Swarna Bhasma, wildcrafted Himalayan herbs, and zero chemical fillers.
+            </p>
           </div>
 
-          {/* Grid of Featured Formulations */}
+          {/* Grid of All Formulations */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
+            {PRODUCTS.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -80,16 +65,6 @@ export default function HomePage({ onSelectProduct, onAddToCart, onOpenDoshaQuiz
                 onAddToCart={onAddToCart}
               />
             ))}
-          </div>
-
-          <div className="mt-14 text-center">
-            <Link
-              to="/shop"
-              className="inline-flex items-center space-x-2 px-8 py-3.5 rounded-full border-2 border-[#173D2B] text-[#173D2B] hover:bg-[#173D2B] hover:text-[#F7F0DF] text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
-            >
-              <span>Explore Complete Store Catalog ({PRODUCTS.length} Formulations)</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
 
         </div>
