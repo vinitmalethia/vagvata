@@ -1,38 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
 import ProductVisual from './ProductVisual';
 
 export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailable, testOrdersEnabled, onUpdateQuantity, onRemoveItem, onProceedToCheckout }) {
-  const [promoCode, setPromoCode] = useState('');
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [promoError, setPromoError] = useState('');
-  const [promoSuccess, setPromoSuccess] = useState('');
-
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const discountAmount = Math.round((subtotal * discountPercent) / 100);
   const shippingThreshold = 499;
   const isFreeShipping = subtotal >= shippingThreshold || subtotal === 0;
   const shippingCost = isFreeShipping ? 0 : 70;
-  const finalTotal = Math.max(0, subtotal - discountAmount + shippingCost);
-
-  const handleApplyPromo = (e) => {
-    e.preventDefault();
-    setPromoError('');
-    setPromoSuccess('');
-    const code = promoCode.trim().toUpperCase();
-    setDiscountPercent(0);
-
-    if (code === 'VAGVAT10' || code === 'AYURVEDA10') {
-      setDiscountPercent(10);
-      setPromoSuccess('10% Sacred Welcome discount applied!');
-    } else if (code === 'VAIDYA15') {
-      setDiscountPercent(15);
-      setPromoSuccess('15% Vaidya consultation discount applied!');
-    } else {
-      setPromoError('Invalid promo code. Try "VAGVAT10" for 10% off.');
-    }
-  };
+  const finalTotal = subtotal + shippingCost;
 
   return (
     <AnimatePresence>
@@ -182,46 +158,12 @@ export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailab
             {/* Footer Summary & Checkout */}
             {cartItems.length > 0 && (
               <div className="p-5 bg-white border-t border-[#C9A45C]/30 space-y-3">
-                {/* Promo Code Input */}
-                <form onSubmit={handleApplyPromo} className="flex space-x-2">
-                  <div className="relative flex-1">
-                    <Tag className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Promo Code (try VAGVAT10)"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-md uppercase font-medium focus:outline-none focus:border-[#C9A45C]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-3.5 py-2 rounded-md bg-[#173D2B] text-[#F7F0DF] text-xs font-semibold uppercase tracking-wider hover:bg-[#102C20] transition-colors"
-                  >
-                    Apply
-                  </button>
-                </form>
-
-                {promoSuccess && (
-                  <p className="text-[11px] text-emerald-700 font-medium">{promoSuccess}</p>
-                )}
-                {promoError && (
-                  <p className="text-[11px] text-red-600 font-medium">{promoError}</p>
-                )}
-
                 {/* Subtotals breakdown */}
-                <div className="space-y-1.5 text-xs text-[#4A5B4D] pt-2 border-t border-gray-100">
+                <div className="space-y-1.5 text-xs text-[#4A5B4D] pt-1">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
                     <span className="font-medium text-[#173D2B]">₹{subtotal}</span>
                   </div>
-
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between text-emerald-700 font-medium">
-                      <span>Sacred Promo ({discountPercent}%)</span>
-                      <span>-₹{discountAmount}</span>
-                    </div>
-                  )}
 
                   <div className="flex justify-between">
                     <span>Shipping</span>
@@ -242,10 +184,10 @@ export default function CartDrawer({ isOpen, onClose, cartItems, checkoutAvailab
                     onClose();
                     onProceedToCheckout({
                       subtotal,
-                      discountAmount,
+                      discountAmount: 0,
                       shippingCost,
                       finalTotal,
-                      couponCode: discountPercent > 0 ? promoCode.trim().toUpperCase() : ''
+                      couponCode: ''
                     });
                   }}
                   disabled={!checkoutAvailable}
